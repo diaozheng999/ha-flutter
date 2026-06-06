@@ -28,7 +28,7 @@ scripts\setup.ps1
 bash scripts/setup.sh
 ```
 
-The setup script installs dependencies, initialises OpenSpec for Claude Code, and configures project-scope MCPs.
+The setup script installs dependencies, initialises OpenSpec (prompting interactively to select which AI tools to configure, or non-interactively if a tools parameter is passed), and configures project-scope MCPs.
 Re-run it any time skills or MCP commands seem missing.
 
 ## Skill & Tool Management

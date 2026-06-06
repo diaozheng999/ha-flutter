@@ -3,7 +3,13 @@
 .SYNOPSIS
     Sets up all agent tooling for ha-flutter on Windows.
     Run this once after cloning, and any time slash commands or skills appear missing.
+.PARAMETER Tools
+    A comma-separated list of tools to configure (e.g. "claude,cursor") or "all"/"none".
+    If omitted, you will be prompted interactively to select the tools.
 #>
+param(
+    [string]$Tools
+)
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
@@ -21,11 +27,15 @@ try {
     Pop-Location
 }
 
-# -- 2. OpenSpec: initialise Claude Code commands and skills -------------------
-Write-Host "`n[2/4] Initialising OpenSpec for Claude Code..." -ForegroundColor Yellow
+# -- 2. OpenSpec: initialise OpenSpec commands and skills ----------------------
+Write-Host "`n[2/4] Initialising OpenSpec..." -ForegroundColor Yellow
 Push-Location $Root
 try {
-    npx openspec init --tools claude
+    if ($Tools) {
+        npx openspec init --tools $Tools
+    } else {
+        npx openspec init
+    }
 } finally {
     Pop-Location
 }

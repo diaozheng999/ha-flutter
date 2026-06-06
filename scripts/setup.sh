@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # Sets up all agent tooling for ha-flutter on Linux / macOS.
 # Run once after cloning, and any time slash commands or skills appear missing.
+# Usage: ./scripts/setup.sh [tools]
+#   [tools] is a comma-separated list of tools to configure (e.g., "claude,cursor") or "all"/"none".
+#   If omitted, you will be prompted interactively to select the tools.
 
 set -euo pipefail
 
@@ -13,10 +16,14 @@ echo ""
 echo "[1/4] Installing npm devDependencies..."
 (cd "$ROOT" && npm install)
 
-# ── 2. OpenSpec: initialise Claude Code commands and skills ───────────────────
+# ── 2. OpenSpec: initialise OpenSpec commands and skills ──────────────────────
 echo ""
-echo "[2/4] Initialising OpenSpec for Claude Code..."
-(cd "$ROOT" && npx openspec init --tools claude)
+echo "[2/4] Initialising OpenSpec..."
+if [ -n "${1-}" ]; then
+    (cd "$ROOT" && npx openspec init --tools "$1")
+else
+    (cd "$ROOT" && npx openspec init)
+fi
 
 # ── 3. Home Assistant MCP (project scope) ─────────────────────────────────────
 echo ""
