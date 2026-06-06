@@ -31,6 +31,11 @@ dependencies:
   cupertino_icons: ^1.0.8
   flutter:
     sdk: flutter
+  flutter_secure_storage: ^9.2.2
+  http: ^1.4.0
+  provider: ^6.1.2
+  url_launcher: ^6.3.1
+  webview_flutter: ^4.10.0
 
 dev_dependencies:
   flutter_lints: ^6.0.0
