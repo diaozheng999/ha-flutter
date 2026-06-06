@@ -19,7 +19,7 @@ $Root = Split-Path -Parent $PSScriptRoot
 Write-Host "==> ha-flutter agent setup (Windows)" -ForegroundColor Cyan
 
 # -- 1. Node dependencies (OpenSpec + future agent tools) ----------------------
-Write-Host "`n[1/4] Installing npm devDependencies..." -ForegroundColor Yellow
+Write-Host "`n[1/5] Installing npm devDependencies..." -ForegroundColor Yellow
 Push-Location $Root
 try {
     npm install
@@ -27,8 +27,23 @@ try {
     Pop-Location
 }
 
-# -- 2. OpenSpec: initialise OpenSpec commands and skills ----------------------
-Write-Host "`n[2/4] Initialising OpenSpec..." -ForegroundColor Yellow
+# -- 2. Skills configuration ---------------------------------------------------
+Write-Host "`n[2/5] Adding skill sources..." -ForegroundColor Yellow
+Push-Location $Root
+try {
+    if ($Tools) {
+        npx skills add homeassistant-ai/skills -a $Tools --skill *
+        npx skills add flutter/skills -a $Tools --skill *
+    } else {
+        npx skills add homeassistant-ai/skills --skill *
+        npx skills add flutter/skills --skill *
+    }
+} finally {
+    Pop-Location
+}
+
+# -- 3. OpenSpec: initialise OpenSpec commands and skills ----------------------
+Write-Host "`n[3/5] Initialising OpenSpec..." -ForegroundColor Yellow
 Push-Location $Root
 try {
     if ($Tools) {
@@ -40,8 +55,8 @@ try {
     Pop-Location
 }
 
-# -- 3. Home Assistant MCP (project scope) -------------------------------------
-Write-Host "`n[3/4] Configuring Home Assistant MCP..." -ForegroundColor Yellow
+# -- 4. Home Assistant MCP (project scope) -------------------------------------
+Write-Host "`n[4/5] Configuring Home Assistant MCP..." -ForegroundColor Yellow
 #
 # The homeassistant-custom MCP is typically configured at user level via
 # Claude Desktop and should already be available in your session.
@@ -57,8 +72,8 @@ Write-Host "`n[3/4] Configuring Home Assistant MCP..." -ForegroundColor Yellow
 #
 Write-Host "  (skipped - homeassistant-custom is configured at user level)" -ForegroundColor DarkGray
 
-# -- 4. Flutter doctor ---------------------------------------------------------
-Write-Host "`n[4/4] Checking Flutter environment..." -ForegroundColor Yellow
+# -- 5. Flutter doctor ---------------------------------------------------------
+Write-Host "`n[5/5] Checking Flutter environment..." -ForegroundColor Yellow
 flutter doctor
 
 Write-Host "`nSetup complete." -ForegroundColor Green

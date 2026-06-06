@@ -13,21 +13,32 @@ echo "==> ha-flutter agent setup (Linux/macOS)"
 
 # ── 1. Node dependencies (OpenSpec + future agent tools) ──────────────────────
 echo ""
-echo "[1/4] Installing npm devDependencies..."
+echo "[1/5] Installing npm devDependencies..."
 (cd "$ROOT" && npm install)
 
-# ── 2. OpenSpec: initialise OpenSpec commands and skills ──────────────────────
+# ── 2. Skills configuration ─────────────────────────────────────────────────
 echo ""
-echo "[2/4] Initialising OpenSpec..."
+echo "[2/5] Adding skill sources..."
+if [ -n "${1-}" ]; then
+    (cd "$ROOT" && npx skills add homeassistant-ai/skills -a "$1" --skill *)
+    (cd "$ROOT" && npx skills add flutter/skills -a "$1" --skill *)
+else
+    (cd "$ROOT" && npx skills add homeassistant-ai/skills --skill *)
+    (cd "$ROOT" && npx skills add flutter/skills --skill *)
+fi
+
+# ── 3. OpenSpec: initialise OpenSpec commands and skills ──────────────────────
+echo ""
+echo "[3/5] Initialising OpenSpec..."
 if [ -n "${1-}" ]; then
     (cd "$ROOT" && npx openspec init --tools "$1")
 else
     (cd "$ROOT" && npx openspec init)
 fi
 
-# ── 3. Home Assistant MCP (project scope) ─────────────────────────────────────
+# ── 4. Home Assistant MCP (project scope) ─────────────────────────────────────
 echo ""
-echo "[3/4] Configuring Home Assistant MCP..."
+echo "[4/5] Configuring Home Assistant MCP..."
 #
 # The homeassistant-custom MCP is typically configured at user level via
 # Claude Desktop and should already be available in your session.
@@ -38,14 +49,14 @@ echo "[3/4] Configuring Home Assistant MCP..."
 # : "${HA_TOKEN:?HA_TOKEN env var is not set}"
 # claude mcp add --scope project homeassistant-custom \
 #     npx @homeassistant-mcp/server \
-#     --env HA_URL="$HA_URL" \
+#	--env HA_URL="$HA_URL" \
 #     --env HA_TOKEN="$HA_TOKEN"
 #
 echo "  (skipped — homeassistant-custom is configured at user level)"
 
-# ── 4. Flutter doctor ─────────────────────────────────────────────────────────
+# ── 5. Flutter doctor ─────────────────────────────────────────────────────────
 echo ""
-echo "[4/4] Checking Flutter environment..."
+echo "[5/5] Checking Flutter environment..."
 flutter doctor
 
 echo ""
