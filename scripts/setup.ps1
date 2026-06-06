@@ -12,7 +12,7 @@ $Root = Split-Path -Parent $PSScriptRoot
 
 Write-Host "==> ha-flutter agent setup (Windows)" -ForegroundColor Cyan
 
-# ── 1. Node dependencies (OpenSpec + future agent tools) ──────────────────────
+# -- 1. Node dependencies (OpenSpec + future agent tools) ----------------------
 Write-Host "`n[1/4] Installing npm devDependencies..." -ForegroundColor Yellow
 Push-Location $Root
 try {
@@ -21,7 +21,7 @@ try {
     Pop-Location
 }
 
-# ── 2. OpenSpec: initialise Claude Code commands and skills ───────────────────
+# -- 2. OpenSpec: initialise Claude Code commands and skills -------------------
 Write-Host "`n[2/4] Initialising OpenSpec for Claude Code..." -ForegroundColor Yellow
 Push-Location $Root
 try {
@@ -30,7 +30,7 @@ try {
     Pop-Location
 }
 
-# ── 3. Home Assistant MCP (project scope) ─────────────────────────────────────
+# -- 3. Home Assistant MCP (project scope) -------------------------------------
 Write-Host "`n[3/4] Configuring Home Assistant MCP..." -ForegroundColor Yellow
 #
 # The homeassistant-custom MCP is typically configured at user level via
@@ -45,9 +45,9 @@ Write-Host "`n[3/4] Configuring Home Assistant MCP..." -ForegroundColor Yellow
 #     --env HA_URL=$env:HA_URL `
 #     --env HA_TOKEN=$env:HA_TOKEN
 #
-Write-Host "  (skipped — homeassistant-custom is configured at user level)" -ForegroundColor DarkGray
+Write-Host "  (skipped - homeassistant-custom is configured at user level)" -ForegroundColor DarkGray
 
-# ── 4. Flutter doctor ─────────────────────────────────────────────────────────
+# -- 4. Flutter doctor ---------------------------------------------------------
 Write-Host "`n[4/4] Checking Flutter environment..." -ForegroundColor Yellow
 flutter doctor
 
