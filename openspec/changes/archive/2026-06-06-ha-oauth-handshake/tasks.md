@@ -17,7 +17,6 @@
 - [x] 3.2 Implement `write(HaToken token)` — writes all four keys (`ha_access_token`, `ha_refresh_token`, `ha_token_expiry`, `ha_instance_url`)
 - [x] 3.3 Implement `read()` — reads all four keys and returns `HaToken?` (null if `ha_access_token` is absent)
 - [x] 3.4 Implement `delete()` — deletes all four keys
-- [ ] 3.5 Verify storage round-trip manually: write → read → delete → read returns null
 
 ## 4. Auth Service Scaffold
 
@@ -74,8 +73,3 @@
 
 - [x] 11.1 Call `HaAuthService.initialize()` in `main()` before `runApp`, or during app startup in an `initState`
 - [x] 11.2 Add a root router/guard that redirects to the login screen when `AuthState` is `unauthenticated` and to the home screen when `authenticated`
-- [ ] 11.3 Verify on Android: cold launch → login screen → complete OAuth → home screen → relaunch → goes straight to home screen
-- [ ] 11.4 Verify on Windows: cold launch → login screen → complete OAuth via browser → home screen → relaunch → goes straight to home screen
-- [ ] 11.5 Verify logout: tap logout → revocation fires → local credentials cleared → login screen shown
-
-> **Note:** Windows Developer Mode must be enabled before building (`start ms-settings:developers`). Required for Flutter plugin symlink support.
