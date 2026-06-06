@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' as riverpod;
 import 'package:ha_flutter/auth/ha_auth_service.dart';
-import 'package:ha_flutter/auth/ha_token_storage.dart';
 import 'package:ha_flutter/auth/screens/login_screen.dart';
 import 'package:ha_flutter/features/app_shell.dart';
 import 'package:ha_flutter/ha/ha_connection.dart';
@@ -12,7 +11,7 @@ import 'package:provider/provider.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  final authService = HaAuthService(storage: HaTokenStorage());
+  final authService = HaAuthService();
   await authService.initialize();
 
   runApp(
@@ -50,11 +49,24 @@ class _RootScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final authState = context.watch<HaAuthService>().state;
+    final authService = context.watch<HaAuthService>();
+    final authState = authService.state;
     return switch (authState) {
       AuthState.unauthenticated || AuthState.error => const LoginScreen(),
-      AuthState.authenticating => const Scaffold(
-          body: Center(child: CircularProgressIndicator()),
+      AuthState.authenticating => Scaffold(
+          body: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator(),
+                const SizedBox(height: 16),
+                Text(
+                  authService.authProgressMessage ?? 'Signing in…',
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
         ),
       AuthState.authenticated => const AppShell(),
     };

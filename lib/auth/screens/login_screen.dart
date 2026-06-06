@@ -73,7 +73,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               if (_error != null) ...[
                 const SizedBox(height: 16),
-                Text(
+                SelectableText(
                   _error!,
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.error,

@@ -25,7 +25,7 @@ class HaLoopbackServer {
           ..headers.contentType = ContentType.html
           ..write(
             '<html><body><h1>Authentication complete</h1>'
-            '<p>You can close this tab and return to the app.</p>'
+            '<p>Loopback callback received successfully. You can close this tab and return to the app.</p>'
             '</body></html>',
           );
         await request.response.close();
