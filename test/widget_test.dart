@@ -60,7 +60,7 @@ void main() {
       final light = EntityState.fromJson({
         'entity_id': 'light.x',
         'state': 'on',
-        'attributes': {},
+        'attributes': <String, dynamic>{},
       });
       expect(HsColorConverter.glowFor(light), HsColorConverter.warmWhite);
     });

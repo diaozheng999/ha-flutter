@@ -49,11 +49,16 @@ class _CameraViewState extends ConsumerState<CameraView> {
   }
 
   Future<void> _refresh() async {
-    final url = await ref.read(haRestClientProvider).proxyImageUrl(
-          '/api/camera_proxy/${widget.entityId}',
-          cacheBust: true,
-        );
-    if (mounted) setState(() => _url = url.toString());
+    if (!mounted) return;
+    try {
+      final url = await ref.read(haRestClientProvider).proxyImageUrl(
+            '/api/camera_proxy/${widget.entityId}',
+            cacheBust: true,
+          );
+      if (mounted) setState(() => _url = url.toString());
+    } catch (_) {
+      // Ignore network errors on background/initial refresh
+    }
   }
 
   @override

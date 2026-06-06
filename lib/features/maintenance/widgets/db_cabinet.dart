@@ -25,6 +25,7 @@ class _DbCabinetState extends ConsumerState<DbCabinet> {
   }
 
   Future<void> _load() async {
+    if (!mounted) return;
     setState(() => _loading = true);
     try {
       final points = await ref

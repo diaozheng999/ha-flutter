@@ -67,6 +67,7 @@ class _SceneTileState extends ConsumerState<SceneTile> {
       child: GlassCard(
         onTap: _activate,
         glowColor: _confirming ? const Color(0xFF66BB6A) : null,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [

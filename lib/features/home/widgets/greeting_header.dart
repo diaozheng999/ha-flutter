@@ -61,12 +61,16 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
         const SizedBox(height: 4),
         Row(
           children: [
-            Text(
-              '$_greeting · ${_weekday(_now.weekday)}, ${_now.day} ${_month(_now.month)}',
-              style: TextStyle(color: tokens.offMuted),
+            Expanded(
+              child: Text(
+                '$_greeting · ${_weekday(_now.weekday)}, ${_now.day} ${_month(_now.month)}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: tokens.offMuted),
+              ),
             ),
-            const Spacer(),
             if (weather != null) ...[
+              const SizedBox(width: 8),
               Icon(_weatherIcon(weather.state), size: 18, color: tokens.onAccent),
               const SizedBox(width: 4),
               Text(

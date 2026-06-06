@@ -23,13 +23,18 @@ class RoomGrid extends StatelessWidget {
             : constraints.maxWidth > 600
                 ? 3
                 : 2;
+        final ratio = constraints.maxWidth > 900
+            ? 1.5
+            : constraints.maxWidth > 600
+                ? 1.4
+                : 1.3;
         return GridView.count(
           crossAxisCount: columns,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           mainAxisSpacing: 12,
           crossAxisSpacing: 12,
-          childAspectRatio: 1.5,
+          childAspectRatio: ratio,
           children: [
             for (final room in HaEntities.rooms) RoomCard(room: room),
           ],
@@ -57,6 +62,7 @@ class RoomCard extends ConsumerWidget {
 
     return GlassCard(
       glowColor: glow,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute<void>(
           builder: (_) => RoomDetailScreen(roomId: room.id),
@@ -89,9 +95,13 @@ class RoomCard extends ConsumerWidget {
                   kind: EnvKind.temperature,
                   attribute: 'current_temperature',
                 ),
-              Text(
-                anyOn ? 'Lights on' : 'Off',
-                style: TextStyle(fontSize: 12, color: tokens.offMuted),
+              Expanded(
+                child: Text(
+                  anyOn ? 'Lights on' : 'Off',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 12, color: tokens.offMuted),
+                ),
               ),
             ],
           ),

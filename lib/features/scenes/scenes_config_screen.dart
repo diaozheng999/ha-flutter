@@ -77,49 +77,63 @@ class _ConfigSelector extends ConsumerWidget {
           data: {'entity_id': HaEntities.configSelect, 'option': option},
         );
 
-    if (options.length <= 4) {
-      return GlassCard(
-        child: SegmentedButton<String>(
-          segments: [
-            for (final o in options) ButtonSegment(value: o, label: Text(o)),
-          ],
-          selected: {if (options.contains(current)) current},
-          showSelectedIcon: false,
-          onSelectionChanged: (s) => select(s.first),
-        ),
-      );
-    }
-
-    return GlassCard(
-      onTap: () async {
-        final picked = await showModalBottomSheet<String>(
-          context: context,
-          builder: (_) => SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                for (final o in options)
-                  ListTile(
-                    title: Text(o),
-                    trailing: o == current ? const Icon(Icons.check) : null,
-                    onTap: () => Navigator.of(context).pop(o),
-                  ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final minWidthNeeded = options.length * 80 + 32;
+        if (options.length <= 4 && constraints.maxWidth >= minWidthNeeded) {
+          return GlassCard(
+            child: SegmentedButton<String>(
+              segments: [
+                for (final o in options) ButtonSegment(value: o, label: Text(o)),
               ],
+              selected: {if (options.contains(current)) current},
+              showSelectedIcon: false,
+              onSelectionChanged: (s) => select(s.first),
             ),
+          );
+        }
+
+        return GlassCard(
+          onTap: () async {
+            final picked = await showModalBottomSheet<String>(
+              context: context,
+              builder: (_) => SafeArea(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    for (final o in options)
+                      ListTile(
+                        title: Text(o),
+                        trailing: o == current ? const Icon(Icons.check) : null,
+                        onTap: () => Navigator.of(context).pop(o),
+                      ),
+                  ],
+                ),
+              ),
+            );
+            if (picked != null) select(picked);
+          },
+          child: Row(
+            children: [
+              const Icon(Icons.tune),
+              const SizedBox(width: 12),
+              Text('Mode', style: TextStyle(color: context.tokens.offMuted)),
+              const Spacer(),
+              Expanded(
+                child: Text(
+                  current,
+                  textAlign: TextAlign.end,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+              const SizedBox(width: 4),
+              const Icon(Icons.chevron_right),
+            ],
           ),
         );
-        if (picked != null) select(picked);
       },
-      child: Row(
-        children: [
-          const Icon(Icons.tune),
-          const SizedBox(width: 12),
-          Text('Mode', style: TextStyle(color: context.tokens.offMuted)),
-          const Spacer(),
-          Text(current, style: const TextStyle(fontWeight: FontWeight.w600)),
-          const Icon(Icons.chevron_right),
-        ],
-      ),
     );
   }
 }

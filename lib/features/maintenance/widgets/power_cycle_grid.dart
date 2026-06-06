@@ -12,17 +12,22 @@ class PowerCycleGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 12,
-      crossAxisSpacing: 12,
-      childAspectRatio: 2.4,
-      children: [
-        for (final s in HaEntities.powerCycleSwitches)
-          _PowerSwitch(label: s.label, entityId: s.entity),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final ratio = constraints.maxWidth > 600 ? 2.4 : 2.0;
+        return GridView.count(
+          crossAxisCount: 2,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: ratio,
+          children: [
+            for (final s in HaEntities.powerCycleSwitches)
+              _PowerSwitch(label: s.label, entityId: s.entity),
+          ],
+        );
+      },
     );
   }
 }
@@ -41,6 +46,7 @@ class _PowerSwitch extends ConsumerWidget {
 
     return GlassCard(
       glowColor: isOn ? tokens.onAccent : null,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       onTap: () => ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Hold to toggle'),
