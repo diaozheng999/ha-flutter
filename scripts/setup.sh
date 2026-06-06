@@ -20,11 +20,11 @@ echo "[1/5] Installing npm devDependencies..."
 echo ""
 echo "[2/5] Adding skill sources..."
 if [ -n "${1-}" ]; then
-    (cd "$ROOT" && npx skills add homeassistant-ai/skills -a "$1" --skill *)
-    (cd "$ROOT" && npx skills add flutter/skills -a "$1" --skill *)
+    (cd "$ROOT" && npx skills add homeassistant-ai/skills -a "$1" --skill "*")
+    (cd "$ROOT" && npx skills add flutter/skills -a "$1" --skill "*")
 else
-    (cd "$ROOT" && npx skills add homeassistant-ai/skills --skill *)
-    (cd "$ROOT" && npx skills add flutter/skills --skill *)
+    (cd "$ROOT" && npx skills add homeassistant-ai/skills --skill "*")
+    (cd "$ROOT" && npx skills add flutter/skills --skill "*")
 fi
 
 # ── 3. OpenSpec: initialise OpenSpec commands and skills ──────────────────────
