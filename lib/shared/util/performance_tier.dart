@@ -9,11 +9,26 @@ enum PerformanceTier { low, medium, high }
 /// Resolves the device's [PerformanceTier] once and persists it. The first
 /// launch runs a short frame-timing probe; later launches read the cached
 /// result so the engine choice is stable.
+///
+/// Pass `--dart-define=PERFORMANCE_TIER=low|medium|high` at launch to force a
+/// specific tier for debugging, bypassing both the cache and the probe.
 class PerformanceTierProbe {
   static const _prefsKey = 'performance_tier';
 
+  // Compile-time override: flutter run --dart-define=PERFORMANCE_TIER=low
+  static const _dartDefine = String.fromEnvironment('PERFORMANCE_TIER');
+
   /// Returns the persisted tier, or runs a probe and persists the result.
+  ///
+  /// If `--dart-define=PERFORMANCE_TIER=<tier>` was supplied at build/run time,
+  /// that value is returned immediately without touching shared preferences.
   static Future<PerformanceTier> resolve() async {
+    if (_dartDefine.isNotEmpty) {
+      return PerformanceTier.values.firstWhere(
+        (t) => t.name == _dartDefine.toLowerCase(),
+        orElse: () => PerformanceTier.medium,
+      );
+    }
     final prefs = await SharedPreferences.getInstance();
     final cached = prefs.getString(_prefsKey);
     if (cached != null) {

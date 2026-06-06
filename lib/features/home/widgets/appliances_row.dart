@@ -6,11 +6,27 @@ import 'package:ha_flutter/shared/theme/app_theme.dart';
 import 'package:ha_flutter/shared/widgets/glass_card.dart';
 
 /// Row of appliance status cards on the home screen.
+///
+/// Set [vertical] to true for a stacked column layout (used in the wide-layout
+/// quick-settings panel where horizontal scrolling is not wanted).
 class AppliancesRow extends StatelessWidget {
-  const AppliancesRow({super.key});
+  final bool vertical;
+  const AppliancesRow({super.key, this.vertical = false});
 
   @override
   Widget build(BuildContext context) {
+    if (vertical) {
+      return const Column(
+        children: [
+          SizedBox(height: 130, child: _ShinyCard()),
+          SizedBox(height: 12),
+          SizedBox(height: 130, child: _WashingMachineCard()),
+          SizedBox(height: 12),
+          SizedBox(height: 130, child: _WaterHeaterCard()),
+        ],
+      );
+    }
+
     return SizedBox(
       height: 130,
       child: ListView(

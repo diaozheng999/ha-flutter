@@ -3,69 +3,65 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ha_flutter/config/ha_entities.dart';
 import 'package:ha_flutter/ha/ha_providers.dart';
 import 'package:ha_flutter/shared/theme/app_theme.dart';
-import 'package:ha_flutter/shared/widgets/glass_card.dart';
 
-/// Horizontal strip of resident presence chips.
+/// Compact inline presence chips — one per resident, sized for a header row.
 class PresenceStrip extends StatelessWidget {
   const PresenceStrip({super.key});
 
   @override
   Widget build(BuildContext context) {
     return const Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Expanded(child: _PersonChip(entityId: HaEntities.personSimon, name: 'Simon')),
-        SizedBox(width: 12),
-        Expanded(child: _PersonChip(entityId: HaEntities.personYamin, name: 'Ya Min')),
+        _PersonDot(entityId: HaEntities.personSimon, name: 'Simon'),
+        SizedBox(width: 6),
+        _PersonDot(entityId: HaEntities.personYamin, name: 'Ya Min'),
       ],
     );
   }
 }
 
-class _PersonChip extends ConsumerWidget {
+/// Avatar initial + presence-coloured dot. Tap shows a tooltip with name/status.
+class _PersonDot extends ConsumerWidget {
   final String entityId;
   final String name;
-  const _PersonChip({required this.entityId, required this.name});
+  const _PersonDot({required this.entityId, required this.name});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = context.tokens;
-    final state = ref.watch(entityStateProvider(entityId)).valueOrNull;
-    final value = state?.state ?? 'unknown';
-    final (label, dot, filled) = switch (value) {
-      'home' => ('Home', const Color(0xFF66BB6A), true),
-      'not_home' => ('Away', tokens.offMuted, false),
-      _ => ('Unknown', const Color(0xFFFFB300), false),
+    final value =
+        ref.watch(entityStateProvider(entityId)).valueOrNull?.state ?? 'unknown';
+    final (label, dot) = switch (value) {
+      'home' => ('Home', const Color(0xFF66BB6A)),
+      'not_home' => ('Away', const Color(0xFF78909C)),
+      _ => ('Unknown', const Color(0xFFFFB300)),
     };
 
-    return GlassCard(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      child: Row(
+    return Tooltip(
+      message: '$name · $label',
+      child: Stack(
+        clipBehavior: Clip.none,
         children: [
           CircleAvatar(
-            radius: 16,
+            radius: 14,
             backgroundColor: tokens.glassFill,
-            child: Text(name.characters.first),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.w600)),
-                Text(label, style: TextStyle(fontSize: 12, color: tokens.offMuted)),
-              ],
+            child: Text(
+              name.characters.first,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
             ),
           ),
-          Container(
-            width: 12,
-            height: 12,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: filled ? dot : Colors.transparent,
-              border: Border.all(color: dot, width: 2),
+          Positioned(
+            bottom: -1,
+            right: -1,
+            child: Container(
+              width: 9,
+              height: 9,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: dot,
+                border: Border.all(color: Colors.black54, width: 1.5),
+              ),
             ),
           ),
         ],

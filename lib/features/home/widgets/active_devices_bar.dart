@@ -7,8 +7,12 @@ import 'package:ha_flutter/shared/widgets/glass_card.dart';
 
 /// Horizontal summary of what's currently active. Shows "All quiet" when the
 /// house is idle. Chips switch to a relevant tab on tap.
+///
+/// Set [wrap] to true to flow chips into multiple rows instead of scrolling
+/// horizontally (used in the wide-layout quick-settings panel).
 class ActiveDevicesBar extends ConsumerWidget {
-  const ActiveDevicesBar({super.key});
+  final bool wrap;
+  const ActiveDevicesBar({super.key, this.wrap = false});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -42,6 +46,14 @@ class ActiveDevicesBar extends ConsumerWidget {
             Text('All quiet', style: TextStyle(color: tokens.offMuted)),
           ],
         ),
+      );
+    }
+
+    if (wrap) {
+      return Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: chips,
       );
     }
 

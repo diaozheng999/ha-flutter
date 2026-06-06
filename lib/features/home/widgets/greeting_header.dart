@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ha_flutter/config/ha_entities.dart';
+import 'package:ha_flutter/features/home/widgets/presence_strip.dart';
 import 'package:ha_flutter/ha/ha_providers.dart';
 import 'package:ha_flutter/shared/theme/app_theme.dart';
 
@@ -47,38 +48,56 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
     final weather = ref.watch(entityStateProvider(HaEntities.weather)).valueOrNull;
     final temp = weather?.attrDouble('temperature');
 
-    return Column(
+    final weatherCondition = weather != null ? _weatherLabel(weather.state) : null;
+
+    return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          '${_two(_now.hour)}:${_two(_now.minute)}',
-          style: tokens.sensorStyle.copyWith(
-            fontSize: 56,
-            fontWeight: FontWeight.w300,
-            height: 1,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Row(
-          children: [
-            Expanded(
-              child: Text(
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '${_two(_now.hour)}:${_two(_now.minute)}',
+                style: tokens.sensorStyle.copyWith(
+                  fontSize: 56,
+                  fontWeight: FontWeight.w300,
+                  height: 1,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
                 '$_greeting · ${_weekday(_now.weekday)}, ${_now.day} ${_month(_now.month)}',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(color: tokens.offMuted),
               ),
-            ),
-            if (weather != null) ...[
-              const SizedBox(width: 8),
-              Icon(_weatherIcon(weather.state), size: 18, color: tokens.onAccent),
-              const SizedBox(width: 4),
-              Text(
-                temp != null ? '${temp.toStringAsFixed(0)}°' : weather.state,
-                style: tokens.sensorStyle,
-              ),
+              if (weather != null) ...[
+                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    Icon(_weatherIcon(weather.state),
+                        size: 16, color: tokens.onAccent),
+                    const SizedBox(width: 4),
+                    Text(
+                      [
+                        weatherCondition,
+                        if (temp != null) '${temp.toStringAsFixed(0)}°',
+                      ].nonNulls.join('  '),
+                      style: TextStyle(
+                          fontSize: 13,
+                          color: tokens.offMuted.withValues(alpha: 0.85)),
+                    ),
+                  ],
+                ),
+              ],
             ],
-          ],
+          ),
+        ),
+        const SizedBox(width: 12),
+        const Padding(
+          padding: EdgeInsets.only(top: 6),
+          child: PresenceStrip(),
         ),
       ],
     );
@@ -94,6 +113,19 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
         'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
         'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
       ][m - 1];
+
+  static String _weatherLabel(String condition) => switch (condition) {
+        'sunny' => 'Sunny',
+        'clear-night' => 'Clear',
+        'partlycloudy' => 'Partly cloudy',
+        'cloudy' => 'Cloudy',
+        'rainy' => 'Rainy',
+        'pouring' => 'Heavy rain',
+        'lightning-rainy' => 'Thunderstorm',
+        'fog' || 'hazy' || 'haze' => 'Foggy',
+        'windy' => 'Windy',
+        _ => condition,
+      };
 
   static IconData _weatherIcon(String condition) => switch (condition) {
         'sunny' => Icons.wb_sunny_outlined,

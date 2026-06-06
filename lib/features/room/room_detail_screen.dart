@@ -41,7 +41,7 @@ class RoomDetailScreen extends ConsumerWidget {
         Positioned.fill(
           child: IgnorePointer(
             child: TweenAnimationBuilder<Color?>(
-              tween: ColorTween(end: tint),
+              tween: ColorTween(end: tint ?? Colors.transparent),
               duration: const Duration(milliseconds: 600),
               builder: (context, color, _) => DecoratedBox(
                 decoration: BoxDecoration(
