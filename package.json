@@ -1,0 +1,8 @@
+{
+  "name": "ha-flutter-agents",
+  "private": true,
+  "description": "Agent tooling dependencies for ha-flutter. Run scripts/setup.ps1 (Windows) or scripts/setup.sh (Linux/macOS) after cloning.",
+  "devDependencies": {
+    "@fission-ai/openspec": "latest"
+  }
+}

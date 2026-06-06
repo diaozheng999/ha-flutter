@@ -1,0 +1,13 @@
+schema: spec-driven
+
+context: |
+  Tech stack: Flutter/Dart
+  Target platforms: Android, Windows
+  Deferred platforms: iOS, macOS (no toolchain — directories exist for future use)
+  Backend: Home Assistant REST API and WebSocket
+  State management: TBD
+  Architecture: TBD
+
+rules:
+  specs:
+    - Use Given/When/Then format for scenarios
