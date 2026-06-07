@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/scheduler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -28,6 +29,10 @@ class PerformanceTierProbe {
         (t) => t.name == _dartDefine.toLowerCase(),
         orElse: () => PerformanceTier.medium,
       );
+    }
+    // Desktop platforms are always high-tier — skip the frame-timing probe.
+    if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
+      return PerformanceTier.high;
     }
     final prefs = await SharedPreferences.getInstance();
     final cached = prefs.getString(_prefsKey);
