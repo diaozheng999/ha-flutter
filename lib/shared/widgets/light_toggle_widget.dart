@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ha_flutter/ha/ha_providers.dart';
 import 'package:ha_flutter/shared/theme/app_theme.dart';
 import 'package:ha_flutter/shared/util/hs_color_converter.dart';
+import 'package:ha_flutter/shared/util/mdi_resolver.dart';
 import 'package:ha_flutter/shared/widgets/glass_card.dart';
 import 'package:ha_flutter/shared/widgets/pending_overlay.dart';
 
@@ -11,13 +12,11 @@ import 'package:ha_flutter/shared/widgets/pending_overlay.dart';
 class LightToggleWidget extends ConsumerWidget {
   final String entityId;
   final String? name;
-  final IconData icon;
 
   const LightToggleWidget({
     super.key,
     required this.entityId,
     this.name,
-    this.icon = Icons.lightbulb_outline,
   });
 
   @override
@@ -39,7 +38,7 @@ class LightToggleWidget extends ConsumerWidget {
         child: Row(
           children: [
             Icon(
-              isOn ? Icons.lightbulb : icon,
+              mdiIcon(state?.icon, fallback: domainFallback('light')),
               color: isOn ? tokens.onAccent : tokens.offMuted,
             ),
             const SizedBox(width: 12),

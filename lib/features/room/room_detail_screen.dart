@@ -7,12 +7,14 @@ import 'package:ha_flutter/ha/models/entity_state.dart';
 import 'package:ha_flutter/shared/background/background_engine.dart';
 import 'package:ha_flutter/shared/theme/app_theme.dart';
 import 'package:ha_flutter/shared/util/hs_color_converter.dart';
+import 'package:ha_flutter/shared/util/mdi_resolver.dart';
 import 'package:ha_flutter/shared/widgets/ac_thermostat_widget.dart';
 import 'package:ha_flutter/shared/widgets/connection_chip.dart';
 import 'package:ha_flutter/shared/widgets/env_reading.dart';
 import 'package:ha_flutter/shared/widgets/fan_speed_dial.dart';
 import 'package:ha_flutter/shared/widgets/glass_card.dart';
 import 'package:ha_flutter/shared/widgets/media_mini_player.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
 /// Per-room detail with its own background, ambient light tinting, and all of
 /// the room's device controls. Pushed from the room grid.
@@ -128,10 +130,13 @@ class _RoomHeader extends ConsumerWidget {
         EnvReading(entityId: room.pm25Sensor!, kind: EnvKind.pm25),
     ];
 
+    final areaIcons = ref.watch(areaIconsProvider).valueOrNull ?? {};
+    final roomIcon = mdiIcon(areaIcons[room.id], fallback: MdiIcons.homeOutline);
+
     return GlassCard(
       child: Row(
         children: [
-          Icon(room.icon, size: 32, color: tokens.onAccent),
+          Icon(roomIcon, size: 32, color: tokens.onAccent),
           const SizedBox(width: 16),
           Expanded(
             child: Column(

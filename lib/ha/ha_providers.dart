@@ -31,6 +31,11 @@ final haWebSocketServiceProvider = Provider<HaWebSocketService>((ref) {
   return service;
 });
 
+/// Area id → mdi icon string, fetched once at startup.
+final areaIconsProvider = FutureProvider<Map<String, String>>((ref) async {
+  return ref.watch(haRestClientProvider).fetchAreaIcons();
+});
+
 /// Runs the REST state bootstrap, then opens the WebSocket. The UI awaits this
 /// once so the first frame renders with real data rather than 70 spinners. A
 /// REST failure does not block the WebSocket connection.

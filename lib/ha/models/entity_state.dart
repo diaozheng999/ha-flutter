@@ -26,6 +26,9 @@ class EntityState {
   String get friendlyName =>
       attributes['friendly_name'] as String? ?? entityId;
 
+  /// HA-provided icon string (e.g. `mdi:lightbulb`), if set.
+  String? get icon => attributes['icon'] as String?;
+
   /// Reads an attribute as a [double] regardless of int/double/string source.
   double? attrDouble(String key) {
     final v = attributes[key];

@@ -6,6 +6,7 @@ import 'package:ha_flutter/ha/ha_providers.dart';
 import 'package:ha_flutter/ha/models/entity_state.dart';
 import 'package:ha_flutter/shared/theme/app_theme.dart';
 import 'package:ha_flutter/shared/util/hs_color_converter.dart';
+import 'package:ha_flutter/shared/util/mdi_resolver.dart';
 import 'package:ha_flutter/shared/widgets/env_reading.dart';
 import 'package:ha_flutter/shared/widgets/glass_card.dart';
 import 'package:ha_flutter/shared/widgets/pending_overlay.dart';
@@ -62,6 +63,11 @@ class RoomCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = context.tokens;
+    final areaIcons = ref.watch(areaIconsProvider).valueOrNull ?? {};
+    final roomIcon = mdiIcon(
+      areaIcons[room.id],
+      fallback: MdiIcons.homeOutline,
+    );
 
     final lights = [
       for (final id in room.allLights)
@@ -94,7 +100,7 @@ class RoomCard extends ConsumerWidget {
           // Header row: room icon + quick-toggle light button
           Row(
             children: [
-              Icon(room.icon,
+              Icon(roomIcon,
                   size: 20,
                   color: anyOn ? tokens.onAccent : tokens.offMuted),
               const Spacer(),

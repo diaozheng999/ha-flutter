@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ha_flutter/config/ha_entities.dart';
 import 'package:ha_flutter/ha/ha_providers.dart';
 import 'package:ha_flutter/shared/theme/app_theme.dart';
+import 'package:ha_flutter/shared/util/mdi_resolver.dart';
 import 'package:ha_flutter/shared/widgets/glass_card.dart';
 
 /// Row of appliance status cards on the home screen.
@@ -87,7 +88,7 @@ class _ShinyCardState extends ConsumerState<_ShinyCard>
               RotationTransition(
                 turns: _spin,
                 child: Icon(
-                  Icons.cleaning_services,
+                  mdiIcon(state?.icon, fallback: domainFallback('vacuum')),
                   color: isError ? const Color(0xFFEF5350) : tokens.onAccent,
                 ),
               ),
@@ -153,7 +154,7 @@ class _WashingMachineCard extends ConsumerWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.local_laundry_service_outlined, color: tokens.offMuted),
+              Icon(mdiIcon(status?.icon, fallback: domainFallback('switch')), color: tokens.offMuted),
               const SizedBox(width: 8),
               const Expanded(
                 child: Text('Washer',
@@ -194,7 +195,7 @@ class _WaterHeaterCard extends ConsumerWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.water_damage_outlined, color: tokens.offMuted),
+              Icon(mdiIcon(state?.icon, fallback: domainFallback('climate')), color: tokens.offMuted),
               const SizedBox(width: 8),
               const Text('Heater', style: TextStyle(fontWeight: FontWeight.w600)),
             ],

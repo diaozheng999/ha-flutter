@@ -1,17 +1,10 @@
-import 'package:flutter/material.dart';
-import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
-
-/// Single source of truth for the entity ids this dashboard controls, the
-/// room-to-entity mapping, and the WebSocket subscription allowlist.
-///
-/// Room order and entity assignment are hardcoded for v1 (see design Open
-/// Questions). A follow-on change can make this data-driven.
+// Single source of truth for entity ids, room-to-entity mapping, and the
+// WebSocket subscription allowlist. Room order is hardcoded for v1.
 
 /// Per-room device inventory.
 class RoomConfig {
   final String id;
   final String name;
-  final IconData icon;
 
   /// Primary light *group* entity for the room (controls all lights at once).
   final String? lightGroup;
@@ -34,7 +27,6 @@ class RoomConfig {
   const RoomConfig({
     required this.id,
     required this.name,
-    required this.icon,
     this.lightGroup,
     this.individualLights = const [],
     this.fan,
@@ -124,11 +116,10 @@ class HaEntities {
   ];
 
   // ── Rooms ─────────────────────────────────────────────────────────────────
-  static final rooms = <RoomConfig>[
+  static const rooms = <RoomConfig>[
     RoomConfig(
       id: 'living_room',
       name: 'Living Room',
-      icon: MdiIcons.sofa,
       lightGroup: 'light.living_room_lights',
       individualLights: [
         'light.0x001788010d9450aa', // hue window
@@ -145,7 +136,7 @@ class HaEntities {
     RoomConfig(
       id: 'kitchen',
       name: 'Kitchen',
-      icon: MdiIcons.stove,
+
       lightGroup: 'light.kitchen_lights',
       individualLights: [
         'light.kitchen_spotlights',
@@ -163,7 +154,7 @@ class HaEntities {
     RoomConfig(
       id: 'bedroom',
       name: 'Bedroom',
-      icon: MdiIcons.bed,
+
       lightGroup: 'light.bedroom_light',
       individualLights: ['light.bedroom_spotlight'],
       fan: 'fan.bedroom_fan',
@@ -175,7 +166,7 @@ class HaEntities {
     RoomConfig(
       id: 'study',
       name: 'Study',
-      icon: MdiIcons.bookOpenPageVariant,
+
       lightGroup: 'light.study_light',
       fan: 'fan.study_fan',
       climate: 'climate.study_ac',
@@ -185,14 +176,14 @@ class HaEntities {
     RoomConfig(
       id: 'entrance',
       name: 'Entrance',
-      icon: MdiIcons.doorOpen,
+
       lightGroup: 'light.entry_lights',
       individualLights: ['light.dining_table_lights'],
     ),
     RoomConfig(
       id: 'pantry',
       name: 'Pantry',
-      icon: MdiIcons.cupboardOutline,
+
       lightGroup: 'light.pantry_lights',
       individualLights: [
         'light.walkway_spotlight_inner',
