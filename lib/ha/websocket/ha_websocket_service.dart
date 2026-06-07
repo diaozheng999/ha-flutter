@@ -227,6 +227,19 @@ class HaWebSocketService {
 
   // ── Service calls ────────────────────────────────────────────────────────────
 
+  /// Fetches the area registry via WebSocket, returning area_id → mdi icon.
+  /// Areas with no icon set are omitted from the result.
+  Future<Map<String, String>> fetchAreaIcons() async {
+    final result = await _request({'type': 'config/area_registry/list'})
+        .timeout(const Duration(seconds: 10));
+    if (result is! List) return {};
+    return {
+      for (final area in result.cast<Map<String, dynamic>>())
+        if (area['area_id'] is String && area['icon'] is String)
+          area['area_id'] as String: area['icon'] as String,
+    };
+  }
+
   /// Sends a `call_service` command and completes when HA acknowledges it.
   /// Throws [HaServiceCallException] on failure.
   Future<void> callService({

@@ -105,22 +105,6 @@ class HaRestClient {
         .length;
   }
 
-  /// Fetches the area registry, returning a map of area_id → mdi icon string.
-  /// Areas without an icon are omitted.
-  Future<Map<String, String>> fetchAreaIcons() async {
-    final res = await _http.get(
-      Uri.parse('${_connection.instanceUrl}/api/config/area_registry/list'),
-      headers: await _headers(),
-    );
-    if (res.statusCode != 200) return {};
-    final list = (jsonDecode(res.body) as List).cast<Map<String, dynamic>>();
-    return {
-      for (final area in list)
-        if (area['area_id'] != null && area['icon'] != null)
-          area['area_id'] as String: area['icon'] as String,
-    };
-  }
-
   /// Builds an authenticated image/camera proxy URL with a cache-busting token.
   Future<Uri> proxyImageUrl(String path, {bool cacheBust = false}) async {
     final token = await _connection.getAccessToken();

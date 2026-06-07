@@ -31,9 +31,14 @@ final haWebSocketServiceProvider = Provider<HaWebSocketService>((ref) {
   return service;
 });
 
-/// Area id → mdi icon string, fetched once at startup.
+/// Area id → mdi icon string, fetched via WebSocket once the connection is up.
 final areaIconsProvider = FutureProvider<Map<String, String>>((ref) async {
-  return ref.watch(haRestClientProvider).fetchAreaIcons();
+  await ref.watch(dashboardInitProvider.future);
+  try {
+    return await ref.read(haWebSocketServiceProvider).fetchAreaIcons();
+  } catch (_) {
+    return {};
+  }
 });
 
 /// Runs the REST state bootstrap, then opens the WebSocket. The UI awaits this
