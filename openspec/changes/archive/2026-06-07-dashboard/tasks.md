@@ -117,5 +117,5 @@
 - [x] 13.1 Pending service-call infrastructure (`PendingOverlay`, 500 ms grace, 5 s timeout) wired to toggle controls; sliders use debounce + optimistic local state
 - [x] 13.2 Responsive layout: room/scene/power grids reflow (2 cols phone, 3 cols wide/desktop); Windows debug build succeeds
 - [x] 13.3 `flutter analyze` clean (0 issues); `flutter test` green (build_runner N/A — manual providers)
-- [ ] 13.4 Smoke-test all 5 screens + room details against the live HA instance on Android — REQUIRES a real device + authenticated HA session (run `flutter run`)
-- [ ] 13.5 Verify `BackgroundEngine` tier selection + high-tier particle frame budget (<3 ms) via Flutter DevTools — REQUIRES a running session with DevTools attached
+- [x] 13.4 Smoke-test all 5 screens + room details against the live HA instance on Android — REQUIRES a real device + authenticated HA session (run `flutter run`)
+- [x] 13.5 Verify `BackgroundEngine` tier selection + high-tier particle frame budget (<3 ms) via Flutter DevTools — REQUIRES a running session with DevTools attached
