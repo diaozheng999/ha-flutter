@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ha_flutter/ha/ha_providers.dart';
 import 'package:ha_flutter/shared/theme/app_theme.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
 /// Kinds of environment reading, each with its own formatting/colour rules.
 enum EnvKind { temperature, humidity, illuminance, pm25 }
@@ -53,18 +54,18 @@ class EnvReading extends ConsumerWidget {
   (IconData, String, Color?) _format(double value, AppTokens tokens) {
     switch (kind) {
       case EnvKind.temperature:
-        return (Icons.thermostat, '${value.toStringAsFixed(1)}°C', null);
+        return (MdiIcons.thermometer, '${value.toStringAsFixed(1)}°C', null);
       case EnvKind.humidity:
-        return (Icons.water_drop_outlined, '${value.round()}%', null);
+        return (MdiIcons.waterPercent, '${value.round()}%', null);
       case EnvKind.illuminance:
-        return (Icons.light_mode_outlined, '${value.round()} lx', null);
+        return (MdiIcons.brightness5, '${value.round()} lx', null);
       case EnvKind.pm25:
         final color = value < 12
             ? const Color(0xFF66BB6A)
             : value <= 35
                 ? const Color(0xFFFFB300)
                 : const Color(0xFFEF5350);
-        return (Icons.air, '${value.round()} µg/m³', color);
+        return (MdiIcons.airFilter, '${value.round()} µg/m³', color);
     }
   }
 }

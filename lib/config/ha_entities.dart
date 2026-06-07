@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
 /// Single source of truth for the entity ids this dashboard controls, the
 /// room-to-entity mapping, and the WebSocket subscription allowlist.
@@ -123,11 +124,11 @@ class HaEntities {
   ];
 
   // ── Rooms ─────────────────────────────────────────────────────────────────
-  static const rooms = <RoomConfig>[
+  static final rooms = <RoomConfig>[
     RoomConfig(
       id: 'living_room',
       name: 'Living Room',
-      icon: Icons.weekend_outlined,
+      icon: MdiIcons.sofa,
       lightGroup: 'light.living_room_lights',
       individualLights: [
         'light.0x001788010d9450aa', // hue window
@@ -144,7 +145,7 @@ class HaEntities {
     RoomConfig(
       id: 'kitchen',
       name: 'Kitchen',
-      icon: Icons.countertops_outlined,
+      icon: MdiIcons.stove,
       lightGroup: 'light.kitchen_lights',
       individualLights: [
         'light.kitchen_spotlights',
@@ -162,7 +163,7 @@ class HaEntities {
     RoomConfig(
       id: 'bedroom',
       name: 'Bedroom',
-      icon: Icons.bed_outlined,
+      icon: MdiIcons.bed,
       lightGroup: 'light.bedroom_light',
       individualLights: ['light.bedroom_spotlight'],
       fan: 'fan.bedroom_fan',
@@ -174,7 +175,7 @@ class HaEntities {
     RoomConfig(
       id: 'study',
       name: 'Study',
-      icon: Icons.menu_book_outlined,
+      icon: MdiIcons.bookOpenPageVariant,
       lightGroup: 'light.study_light',
       fan: 'fan.study_fan',
       climate: 'climate.study_ac',
@@ -184,14 +185,14 @@ class HaEntities {
     RoomConfig(
       id: 'entrance',
       name: 'Entrance',
-      icon: Icons.door_front_door_outlined,
+      icon: MdiIcons.doorOpen,
       lightGroup: 'light.entry_lights',
       individualLights: ['light.dining_table_lights'],
     ),
     RoomConfig(
       id: 'pantry',
       name: 'Pantry',
-      icon: Icons.coffee_outlined,
+      icon: MdiIcons.cupboardOutline,
       lightGroup: 'light.pantry_lights',
       individualLights: [
         'light.walkway_spotlight_inner',

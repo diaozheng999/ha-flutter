@@ -9,6 +9,7 @@ import 'package:ha_flutter/shared/util/hs_color_converter.dart';
 import 'package:ha_flutter/shared/widgets/env_reading.dart';
 import 'package:ha_flutter/shared/widgets/glass_card.dart';
 import 'package:ha_flutter/shared/widgets/pending_overlay.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
 /// Responsive grid of room cards. Columns adapt to width (2 on phones, 3+ on
 /// wide / desktop windows).
@@ -49,6 +50,15 @@ class RoomCard extends ConsumerWidget {
   final RoomConfig room;
   const RoomCard({super.key, required this.room});
 
+  static String _acModeLabel(String? state) => switch (state) {
+        'cool' => 'Cooling',
+        'heat' => 'Heating',
+        'dry' => 'Dry',
+        'fan_only' => 'Fan',
+        'auto' => 'Auto',
+        _ => state ?? '',
+      };
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = context.tokens;
@@ -61,9 +71,6 @@ class RoomCard extends ConsumerWidget {
     final anyOn = lights.any((l) => l.isOn);
     final glow =
         anyOn ? HsColorConverter.ambientTint(lights, lightness: 0.45) : null;
-
-    final fanOn = room.fan != null &&
-        (ref.watch(entityStateProvider(room.fan!)).valueOrNull?.isOn ?? false);
 
     final acState = room.climate != null
         ? ref.watch(entityStateProvider(room.climate!)).valueOrNull?.state
@@ -100,7 +107,7 @@ class RoomCard extends ConsumerWidget {
                       ref.read(haServiceProvider).toggle(lightGroupId);
                     },
                     child: Icon(
-                      anyOn ? Icons.lightbulb : Icons.lightbulb_outline,
+                      anyOn ? MdiIcons.lightbulb : MdiIcons.lightbulbOutline,
                       size: 18,
                       color: anyOn ? tokens.onAccent : tokens.offMuted,
                     ),
@@ -116,40 +123,31 @@ class RoomCard extends ConsumerWidget {
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 6),
-          // Status row: AC temp, fan, light summary
+          // Status row: temperature + AC mode
           Row(
             children: [
               if (room.climate != null)
-                Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: EnvReading(
-                    entityId: room.climate!,
-                    kind: EnvKind.temperature,
-                    attribute: 'current_temperature',
-                  ),
-                ),
-              if (fanOn)
-                Padding(
-                  padding: const EdgeInsets.only(right: 6),
-                  child: Icon(Icons.air,
-                      size: 14, color: tokens.onAccent.withValues(alpha: 0.8)),
+                EnvReading(
+                  entityId: room.climate!,
+                  kind: EnvKind.temperature,
+                  attribute: 'current_temperature',
                 ),
               if (acActive)
                 Padding(
                   padding: const EdgeInsets.only(right: 6),
-                  child: Icon(Icons.ac_unit,
-                      size: 14, color: tokens.onAccent.withValues(alpha: 0.8)),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(MdiIcons.airConditioner,
+                          size: 13, color: tokens.onAccent.withValues(alpha: 0.8)),
+                      const SizedBox(width: 3),
+                      Text(
+                        _acModeLabel(acState),
+                        style: TextStyle(fontSize: 12, color: tokens.offMuted),
+                      ),
+                    ],
+                  ),
                 ),
-              Expanded(
-                child: Text(
-                  anyOn
-                      ? '${lights.where((l) => l.isOn).length} light${lights.where((l) => l.isOn).length == 1 ? '' : 's'}'
-                      : 'Off',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 12, color: tokens.offMuted),
-                ),
-              ),
             ],
           ),
         ],

@@ -6,6 +6,7 @@ import 'package:ha_flutter/config/ha_entities.dart';
 import 'package:ha_flutter/features/home/widgets/presence_strip.dart';
 import 'package:ha_flutter/ha/ha_providers.dart';
 import 'package:ha_flutter/shared/theme/app_theme.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
 /// Greeting header: large clock, date, weather summary, and a time-of-day
 /// greeting. The clock ticks once a minute without rebuilding the whole screen.
@@ -60,12 +61,12 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
               Text(
                 '${_two(_now.hour)}:${_two(_now.minute)}',
                 style: tokens.sensorStyle.copyWith(
-                  fontSize: 56,
+                  fontSize: 64,
                   fontWeight: FontWeight.w300,
                   height: 1,
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 8),
               Text(
                 '$_greeting · ${_weekday(_now.weekday)}, ${_now.day} ${_month(_now.month)}',
                 maxLines: 1,
@@ -73,19 +74,19 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
                 style: TextStyle(color: tokens.offMuted),
               ),
               if (weather != null) ...[
-                const SizedBox(height: 2),
+                const SizedBox(height: 8),
                 Row(
                   children: [
                     Icon(_weatherIcon(weather.state),
-                        size: 16, color: tokens.onAccent),
-                    const SizedBox(width: 4),
+                        size: 18, color: tokens.onAccent),
+                    const SizedBox(width: 6),
                     Text(
                       [
                         weatherCondition,
                         if (temp != null) '${temp.toStringAsFixed(0)}°',
                       ].nonNulls.join('  '),
                       style: TextStyle(
-                          fontSize: 13,
+                          fontSize: 14,
                           color: tokens.offMuted.withValues(alpha: 0.85)),
                     ),
                   ],
@@ -128,15 +129,15 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
       };
 
   static IconData _weatherIcon(String condition) => switch (condition) {
-        'sunny' => Icons.wb_sunny_outlined,
-        'clear-night' => Icons.nightlight_outlined,
-        'partlycloudy' => Icons.wb_cloudy_outlined,
-        'cloudy' => Icons.cloud_outlined,
-        'rainy' => Icons.water_drop_outlined,
-        'pouring' => Icons.grain,
-        'lightning-rainy' => Icons.thunderstorm_outlined,
-        'fog' || 'hazy' || 'haze' => Icons.foggy,
-        'windy' => Icons.air,
-        _ => Icons.wb_cloudy_outlined,
+        'sunny' => MdiIcons.weatherSunny,
+        'clear-night' => MdiIcons.weatherNight,
+        'partlycloudy' => MdiIcons.weatherPartlyCloudy,
+        'cloudy' => MdiIcons.weatherCloudy,
+        'rainy' => MdiIcons.weatherRainy,
+        'pouring' => MdiIcons.weatherPouring,
+        'lightning-rainy' => MdiIcons.weatherLightningRainy,
+        'fog' || 'hazy' || 'haze' => MdiIcons.weatherFog,
+        'windy' => MdiIcons.weatherWindy,
+        _ => MdiIcons.weatherCloudy,
       };
 }

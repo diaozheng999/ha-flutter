@@ -4,6 +4,7 @@ import 'package:ha_flutter/features/app_shell.dart';
 import 'package:ha_flutter/features/home/home_providers.dart';
 import 'package:ha_flutter/shared/theme/app_theme.dart';
 import 'package:ha_flutter/shared/widgets/glass_card.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
 /// Horizontal summary of what's currently active. Shows "All quiet" when the
 /// house is idle. Chips switch to a relevant tab on tap.
@@ -24,16 +25,16 @@ class ActiveDevicesBar extends ConsumerWidget {
 
     final chips = <Widget>[
       if (lights > 0)
-        _chip(context, Icons.lightbulb, '$lights on', tokens.onAccent,
+        _chip(context, MdiIcons.lightbulbMultiple, '$lights on', tokens.onAccent,
             () => _goTab(ref, 1)),
       if (fans > 0)
-        _chip(context, Icons.mode_fan_off, '$fans fan${fans > 1 ? 's' : ''}',
+        _chip(context, MdiIcons.fan, '$fans fan${fans > 1 ? 's' : ''}',
             tokens.onAccent, () => _goTab(ref, 1)),
       if (acs > 0)
-        _chip(context, Icons.ac_unit, '$acs AC${acs > 1 ? 's' : ''}',
+        _chip(context, MdiIcons.airConditioner, '$acs AC${acs > 1 ? 's' : ''}',
             tokens.onAccent, () => _goTab(ref, 1)),
       if (vacuum)
-        _chip(context, Icons.cleaning_services, 'Cleaning', tokens.onAccent,
+        _chip(context, MdiIcons.robotVacuum, 'Cleaning', tokens.onAccent,
             null),
     ];
 
@@ -41,7 +42,7 @@ class ActiveDevicesBar extends ConsumerWidget {
       return GlassCard(
         child: Row(
           children: [
-            Icon(Icons.nightlight_round, color: tokens.offMuted, size: 18),
+            Icon(MdiIcons.moonWaningCrescent, color: tokens.offMuted, size: 18),
             const SizedBox(width: 8),
             Text('All quiet', style: TextStyle(color: tokens.offMuted)),
           ],
