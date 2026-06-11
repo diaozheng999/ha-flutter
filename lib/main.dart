@@ -1,19 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' as riverpod;
 import 'package:ha_flutter/auth/ha_auth_service.dart';
-import 'package:ha_flutter/auth/ha_token_storage.dart';
 import 'package:ha_flutter/auth/screens/login_screen.dart';
+import 'package:ha_flutter/features/app_shell.dart';
+import 'package:ha_flutter/ha/ha_connection.dart';
+import 'package:ha_flutter/ha/ha_providers.dart';
+import 'package:ha_flutter/shared/theme/app_theme.dart';
 import 'package:provider/provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  final authService = HaAuthService(storage: HaTokenStorage());
+  final authService = HaAuthService();
   await authService.initialize();
 
   runApp(
-    ChangeNotifierProvider.value(
-      value: authService,
-      child: const HaApp(),
+    // Riverpod scope: the HA layer reads its connection from the override below,
+    // bridging the existing provider-based auth into the new dashboard layer.
+    riverpod.ProviderScope(
+      overrides: [
+        haConnectionProvider.overrideWithValue(
+          AuthServiceConnection(authService),
+        ),
+      ],
+      child: ChangeNotifierProvider.value(
+        value: authService,
+        child: const HaApp(),
+      ),
     ),
   );
 }
@@ -25,10 +38,7 @@ class HaApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Home Assistant',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF18BCF2)),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.dark,
       home: const _RootScreen(),
     );
   }
@@ -39,34 +49,26 @@ class _RootScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final authState = context.watch<HaAuthService>().state;
+    final authService = context.watch<HaAuthService>();
+    final authState = authService.state;
     return switch (authState) {
       AuthState.unauthenticated || AuthState.error => const LoginScreen(),
-      AuthState.authenticating => const Scaffold(
-          body: Center(child: CircularProgressIndicator()),
-        ),
-      AuthState.authenticated => const _HomeScreen(),
-    };
-  }
-}
-
-class _HomeScreen extends StatelessWidget {
-  const _HomeScreen();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Home Assistant'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Sign out',
-            onPressed: () => context.read<HaAuthService>().logout(),
+      AuthState.authenticating => Scaffold(
+          body: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator(),
+                const SizedBox(height: 16),
+                Text(
+                  authService.authProgressMessage ?? 'Signing in…',
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
           ),
-        ],
-      ),
-      body: const Center(child: Text('Connected')),
-    );
+        ),
+      AuthState.authenticated => const AppShell(),
+    };
   }
 }

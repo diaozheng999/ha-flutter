@@ -13,11 +13,12 @@ import 'package:url_launcher/url_launcher.dart';
 enum AuthState { unauthenticated, authenticating, authenticated, error }
 
 class HaAuthService extends ChangeNotifier {
-  final HaTokenStorage _storage;
+  final TokenStorage _storage;
 
   AuthState _state = AuthState.unauthenticated;
   HaToken? _token;
   int? _lastErrorStatus;
+  String? _progressMessage;
 
   // Per-session OAuth state
   String? _sessionState;
@@ -27,12 +28,20 @@ class HaAuthService extends ChangeNotifier {
   // Refresh mutex: non-null while a refresh is in flight
   Completer<void>? _refreshCompleter;
 
-  HaAuthService({HaTokenStorage? storage})
-      : _storage = storage ?? HaTokenStorage();
+  /// Uses a default storage backend; on macOS this is intentionally
+  /// an in-memory fallback to bypass keychain entitlement/signing issues.
+  HaAuthService({TokenStorage? storage})
+      : _storage = storage ?? createDefaultTokenStorage();
 
   AuthState get state => _state;
   HaToken? get token => _token;
   int? get lastErrorStatus => _lastErrorStatus;
+  String? get authProgressMessage => _progressMessage;
+
+  void _setProgress(String message) {
+    _progressMessage = message;
+    notifyListeners();
+  }
 
   // ── Initialisation ────────────────────────────────────────────────────────
 
@@ -72,6 +81,8 @@ class HaAuthService extends ChangeNotifier {
       );
     } else {
       // Desktop: loopback flow
+      _setState(AuthState.authenticating);
+      _setProgress('Starting local OAuth loopback server...');
       final server = await HaLoopbackServer.bind();
       _sessionClientId = server.clientId;
       _sessionRedirectUri = server.redirectUri;
@@ -83,10 +94,12 @@ class HaAuthService extends ChangeNotifier {
         state: state,
       );
 
-      _setState(AuthState.authenticating);
+      _setProgress('Waiting for Home Assistant redirect at ${server.redirectUri}...');
       await launchUrl(authUrl, mode: LaunchMode.externalApplication);
+      _setProgress('Browser opened; waiting for callback...');
 
       final result = await server.waitForCode();
+      _setProgress('Callback received; exchanging authorization code...');
       await handleCallback(result.code, result.state);
       return null;
     }
@@ -99,7 +112,7 @@ class HaAuthService extends ChangeNotifier {
       _sessionState = null;
       _sessionClientId = null;
       _sessionRedirectUri = null;
-      _setState(AuthState.error);
+      _setProgress('Authentication failed: invalid OAuth state.');
       return;
     }
 
@@ -109,26 +122,37 @@ class HaAuthService extends ChangeNotifier {
     _sessionClientId = null;
     _sessionRedirectUri = null;
 
-    final response = await http.post(
-      Uri.parse('$haInstanceUrl/auth/token'),
-      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-      body: {
-        'grant_type': 'authorization_code',
-        'code': code,
-        'client_id': clientId,
-        'redirect_uri': redirectUri,
-      },
-    );
+    _setProgress('Exchanging authorization code...');
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$haInstanceUrl/auth/token'),
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: {
+              'grant_type': 'authorization_code',
+              'code': code,
+              'client_id': clientId,
+              'redirect_uri': redirectUri,
+            },
+          )
+          .timeout(const Duration(seconds: 15));
 
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      final token = HaToken.fromTokenResponse(json, haInstanceUrl);
-      await _storage.write(token);
-      _token = token;
-      _setState(AuthState.authenticated);
-    } else {
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body) as Map<String, dynamic>;
+        final token = HaToken.fromTokenResponse(json, haInstanceUrl);
+        await _storage.write(token);
+        _token = token;
+        _progressMessage = null;
+        _setState(AuthState.authenticated);
+        return;
+      }
+
       _lastErrorStatus = response.statusCode;
-      _setState(AuthState.error);
+      _setProgress('Authentication failed (${response.statusCode}).');
+      return;
+    } catch (e) {
+      _setProgress('Authentication failed: ${e.toString()}');
+      return;
     }
   }
 
