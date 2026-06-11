@@ -1,6 +1,10 @@
 // Single source of truth for entity ids, room-to-entity mapping, and the
 // WebSocket subscription allowlist. Room order is hardcoded for v1.
 
+import 'package:ha_flutter/config/alert_rules.dart';
+
+export 'package:ha_flutter/config/alert_rules.dart';
+
 /// Per-room device inventory.
 class RoomConfig {
   final String id;
@@ -19,10 +23,17 @@ class RoomConfig {
   /// Adaptive lighting switch governing this room, if any.
   final String? adaptiveLightingSwitch;
 
-  /// Environment sensors surfaced in this room's header.
+  /// Environment sensors surfaced in this room's header/sidebar. Temperature
+  /// needs a real sensor entity (not the AC attribute) for history graphs.
+  final String? temperatureSensor;
   final String? humiditySensor;
   final String? illuminanceSensor;
   final String? pm25Sensor;
+
+  /// Declarative alert rules for semantic events (activity notices,
+  /// consumable thresholds). Standard safety/battery/problem sensors are
+  /// autodiscovered from the HA registries and need no entry here.
+  final List<AlertRule> alertRules;
 
   const RoomConfig({
     required this.id,
@@ -33,15 +44,25 @@ class RoomConfig {
     this.climate,
     this.mediaPlayer,
     this.adaptiveLightingSwitch,
+    this.temperatureSensor,
     this.humiditySensor,
     this.illuminanceSensor,
     this.pm25Sensor,
+    this.alertRules = const [],
   });
 
   /// All light entities (group + individuals) for aggregate state/glow.
   List<String> get allLights => [
         ?lightGroup,
         ...individualLights,
+      ];
+
+  /// Controllable device entities, monitored for offline (unavailable) alerts.
+  List<String> get deviceEntities => [
+        ...allLights,
+        ?fan,
+        ?climate,
+        ?mediaPlayer,
       ];
 }
 
@@ -130,6 +151,7 @@ class HaEntities {
       climate: 'climate.living_room_ac',
       mediaPlayer: 'media_player.lg_webos_tv_qned82asa_3',
       adaptiveLightingSwitch: alLivingRoom,
+      temperatureSensor: lrTemperatureSensor,
       humiditySensor: lrHumiditySensor,
       illuminanceSensor: lrIlluminanceSensor,
     ),
@@ -150,6 +172,19 @@ class HaEntities {
         'light.dining_table_lights',
       ],
       adaptiveLightingSwitch: alKitchen,
+      alertRules: [
+        // Washer lives in the service yard off the kitchen; reassign if the
+        // HA area mapping says otherwise.
+        AlertRule.stateIn(
+          entity: washerStatus,
+          states: ['end', 'finish', 'finished', 'complete', 'completed', 'done'],
+          severity: RoomAlertSeverity.activity,
+          label: 'Laundry done',
+        ),
+        // Pending entity-id confirmation (add once identified in HA):
+        // - Doorbell ring (momentary: true, severity: activity, "Doorbell")
+        // - Dishwasher done (severity: activity, "Dishwasher done")
+      ],
     ),
     RoomConfig(
       id: 'bedroom',
@@ -162,6 +197,9 @@ class HaEntities {
       mediaPlayer: 'media_player.bedroom_speaker_2',
       adaptiveLightingSwitch: alBedroom,
       pm25Sensor: bedroomPm25Sensor,
+      // Pending entity-id confirmation: purifier filter-life sensor →
+      // AlertRule.numericBelow(threshold: 10, severity: maintenance,
+      // label: 'Replace purifier filter').
     ),
     RoomConfig(
       id: 'study',
@@ -245,6 +283,7 @@ class HaEntities {
         if (r.fan != null) r.fan!,
         if (r.climate != null) r.climate!,
         if (r.mediaPlayer != null) r.mediaPlayer!,
+        for (final rule in r.alertRules) rule.entity,
       ],
     };
     return ids.toList();

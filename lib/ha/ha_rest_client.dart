@@ -71,7 +71,13 @@ class HaRestClient {
 
   /// Fetches all entities in a domain (e.g. `scene`), used to discover dynamic
   /// entity sets that aren't worth a permanent WebSocket subscription.
-  Future<List<EntityState>> fetchByDomain(String domain) async {
+  Future<List<EntityState>> fetchByDomain(String domain) =>
+      fetchDomainStates({domain});
+
+  /// Fetches all entities whose domain is in [domains] in a single states
+  /// snapshot. Used by alert discovery to read `device_class` attributes
+  /// before any WebSocket subscription exists for those entities.
+  Future<List<EntityState>> fetchDomainStates(Set<String> domains) async {
     final res = await _http.get(
       Uri.parse('${_connection.instanceUrl}/api/states'),
       headers: await _headers(),
@@ -82,7 +88,7 @@ class HaRestClient {
     final list = (jsonDecode(res.body) as List).cast<Map<String, dynamic>>();
     return [
       for (final json in list)
-        if ((json['entity_id'] as String).startsWith('$domain.'))
+        if (domains.contains((json['entity_id'] as String).split('.').first))
           EntityState.fromJson(json),
     ];
   }

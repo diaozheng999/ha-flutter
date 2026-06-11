@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:ha_flutter/config/ha_entities.dart';
 import 'package:ha_flutter/ha/ha_connection.dart';
 import 'package:ha_flutter/ha/models/entity_state.dart';
+import 'package:ha_flutter/ha/models/registry_entry.dart';
 import 'package:ha_flutter/ha/repository/entity_state_repository.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
@@ -193,7 +194,7 @@ class HaWebSocketService {
       final newState = data?['new_state'];
       if (newState is Map) {
         final entityId = newState['entity_id'] as String?;
-        if (entityId != null && HaEntities.allowlist.contains(entityId)) {
+        if (entityId != null && _isSubscribed(entityId)) {
           repository.put(
               EntityState.fromJson(newState.cast<String, dynamic>()));
         }
@@ -210,11 +211,19 @@ class HaWebSocketService {
 
   // ── Subscription ────────────────────────────────────────────────────────────
 
+  /// Runtime extension of the compile-time allowlist (discovered alert
+  /// sensors). Bounded and device-class-filtered by the discovery layer.
+  final Set<String> _extraEntityIds = {};
+
+  bool _isSubscribed(String entityId) =>
+      _extraEntityIds.contains(entityId) ||
+      HaEntities.allowlist.contains(entityId);
+
   Future<void> _subscribe() async {
     try {
       await _request({
         'type': 'subscribe_entities',
-        'entity_ids': HaEntities.allowlist,
+        'entity_ids': [...HaEntities.allowlist, ..._extraEntityIds],
       });
     } catch (_) {
       // Fallback for HA < 2022.9 — subscribe to all state_changed and filter.
@@ -222,6 +231,26 @@ class HaWebSocketService {
         'type': 'subscribe_events',
         'event_type': 'state_changed',
       });
+    }
+  }
+
+  /// Subscribes to additional entities beyond the base allowlist. Ids are
+  /// remembered so reconnects re-establish the full set (see [_subscribe]).
+  Future<void> extendSubscription(Iterable<String> entityIds) async {
+    final fresh = entityIds
+        .where((id) => !_isSubscribed(id))
+        .toList();
+    if (fresh.isEmpty) return;
+    _extraEntityIds.addAll(fresh);
+    if (kDebugMode) {
+      debugPrint('HA WS subscription extended with ${fresh.length} ids: $fresh');
+    }
+    if (_status != ConnectionStatus.connected) return;
+    try {
+      await _request({'type': 'subscribe_entities', 'entity_ids': fresh});
+    } catch (_) {
+      // The subscribe_events fallback already covers the extension via the
+      // client-side filter in _handleEvent.
     }
   }
 
@@ -238,6 +267,28 @@ class HaWebSocketService {
         if (area['area_id'] is String && area['icon'] is String)
           area['area_id'] as String: area['icon'] as String,
     };
+  }
+
+  /// Fetches the entity registry (entity → device/area assignment).
+  Future<List<EntityRegistryEntry>> fetchEntityRegistry() async {
+    final result = await _request({'type': 'config/entity_registry/list'})
+        .timeout(const Duration(seconds: 10));
+    if (result is! List) return const [];
+    return [
+      for (final e in result)
+        if (e is Map) EntityRegistryEntry.fromJson(e.cast<String, dynamic>()),
+    ];
+  }
+
+  /// Fetches the device registry (device → area assignment).
+  Future<List<DeviceRegistryEntry>> fetchDeviceRegistry() async {
+    final result = await _request({'type': 'config/device_registry/list'})
+        .timeout(const Duration(seconds: 10));
+    if (result is! List) return const [];
+    return [
+      for (final e in result)
+        if (e is Map) DeviceRegistryEntry.fromJson(e.cast<String, dynamic>()),
+    ];
   }
 
   /// Sends a `call_service` command and completes when HA acknowledges it.
