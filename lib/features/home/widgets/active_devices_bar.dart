@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_material_design_icons/flutter_material_design_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ha_flutter/features/app_shell.dart';
 import 'package:ha_flutter/features/home/home_providers.dart';
 import 'package:ha_flutter/shared/theme/app_theme.dart';
 import 'package:ha_flutter/shared/widgets/glass_card.dart';
-import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
 /// Horizontal summary of what's currently active. Shows "All quiet" when the
 /// house is idle. Chips switch to a relevant tab on tap.

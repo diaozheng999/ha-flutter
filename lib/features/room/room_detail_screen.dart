@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_material_design_icons/flutter_material_design_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ha_flutter/config/ha_entities.dart';
 import 'package:ha_flutter/features/room/widgets/room_lights_section.dart';
@@ -14,7 +15,6 @@ import 'package:ha_flutter/shared/widgets/env_reading.dart';
 import 'package:ha_flutter/shared/widgets/fan_speed_dial.dart';
 import 'package:ha_flutter/shared/widgets/glass_card.dart';
 import 'package:ha_flutter/shared/widgets/media_mini_player.dart';
-import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
 /// Per-room detail with its own background, ambient light tinting, and all of
 /// the room's device controls. Pushed from the room grid.

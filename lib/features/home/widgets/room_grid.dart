@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_material_design_icons/flutter_material_design_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ha_flutter/config/ha_entities.dart';
 import 'package:ha_flutter/features/room/room_detail_screen.dart';
@@ -10,7 +11,6 @@ import 'package:ha_flutter/shared/util/mdi_resolver.dart';
 import 'package:ha_flutter/shared/widgets/env_reading.dart';
 import 'package:ha_flutter/shared/widgets/glass_card.dart';
 import 'package:ha_flutter/shared/widgets/pending_overlay.dart';
-import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
 /// Responsive grid of room cards. Columns adapt to width (2 on phones, 3+ on
 /// wide / desktop windows).
