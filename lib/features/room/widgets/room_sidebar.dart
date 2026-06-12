@@ -11,8 +11,7 @@ import 'package:ha_flutter/shared/widgets/env_reading.dart';
 import 'package:ha_flutter/shared/widgets/glass_card.dart';
 
 /// Wide-layout room sidebar: identity, environment summary, alert strip, and
-/// section navigation with live status lines. Acts as a glanceable dashboard
-/// even when a different section is selected.
+/// bookmark nav that scrolls the content pane to each section.
 class RoomSidebar extends ConsumerWidget {
   final RoomConfig room;
   final List<RoomSection> sections;
@@ -69,7 +68,7 @@ class RoomSidebar extends ConsumerWidget {
             child: Column(
               children: [
                 for (final section in sections)
-                  _NavItem(
+                  _BookmarkItem(
                     section: section,
                     statusLine: sectionStatusLine(ref, room, section),
                     selected: section == selected,
@@ -82,7 +81,6 @@ class RoomSidebar extends ConsumerWidget {
     );
   }
 
-  /// The room's environment readings — same sources as the old header card.
   static List<Widget> _envReadings(RoomConfig room) => [
         if (room.climate != null)
           EnvReading(
@@ -100,13 +98,13 @@ class RoomSidebar extends ConsumerWidget {
       ];
 }
 
-class _NavItem extends StatelessWidget {
+class _BookmarkItem extends StatelessWidget {
   final RoomSection section;
   final String statusLine;
   final bool selected;
   final VoidCallback onTap;
 
-  const _NavItem({
+  const _BookmarkItem({
     required this.section,
     required this.statusLine,
     required this.selected,

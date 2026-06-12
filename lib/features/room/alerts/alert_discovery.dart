@@ -5,10 +5,11 @@
 // states flow through entityStateProvider like any other entity.
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ha_flutter/config/ha_entities.dart';
+import 'package:ha_flutter/config/room_config.dart';
 import 'package:ha_flutter/features/room/alerts/room_alert.dart';
 import 'package:ha_flutter/ha/ha_providers.dart';
 import 'package:ha_flutter/ha/models/registry_entry.dart';
+import 'package:ha_flutter/ha/room_registry_provider.dart';
 
 /// Binary-sensor device classes that map to safety alerts when `on`.
 const safetyDeviceClasses = {
@@ -80,7 +81,11 @@ final discoveredAlertSensorsProvider =
           if (s.attrString('device_class') != null)
             s.entityId: s.attrString('device_class')!,
       },
-      roomIds: {for (final r in HaEntities.rooms) r.id},
+      roomIds: <String>{
+        for (final r
+            in ref.read(roomConfigsProvider).valueOrNull ?? <RoomConfig>[])
+          r.id,
+      },
     );
 
     await ws.extendSubscription([

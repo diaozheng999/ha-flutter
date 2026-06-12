@@ -29,13 +29,22 @@ class EntityRegistryEntry {
 class DeviceRegistryEntry {
   final String id;
   final String? areaId;
+  final String name;
+  final String? model;
 
-  const DeviceRegistryEntry({required this.id, this.areaId});
+  const DeviceRegistryEntry({
+    required this.id,
+    required this.name,
+    this.areaId,
+    this.model,
+  });
 
   factory DeviceRegistryEntry.fromJson(Map<String, dynamic> json) {
     return DeviceRegistryEntry(
       id: json['id'] as String,
+      name: (json['name_by_user'] ?? json['name'] ?? '') as String,
       areaId: json['area_id'] as String?,
+      model: json['model'] as String?,
     );
   }
 }

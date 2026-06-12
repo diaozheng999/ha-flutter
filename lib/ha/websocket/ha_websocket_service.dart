@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
-import 'package:ha_flutter/config/ha_entities.dart';
 import 'package:ha_flutter/ha/ha_connection.dart';
+import 'package:ha_flutter/ha/models/area_entry.dart';
 import 'package:ha_flutter/ha/models/entity_state.dart';
 import 'package:ha_flutter/ha/models/registry_entry.dart';
 import 'package:ha_flutter/ha/repository/entity_state_repository.dart';
@@ -211,19 +211,20 @@ class HaWebSocketService {
 
   // ── Subscription ────────────────────────────────────────────────────────────
 
-  /// Runtime extension of the compile-time allowlist (discovered alert
-  /// sensors). Bounded and device-class-filtered by the discovery layer.
+  // Combined entity subscription set: base (standalone) + room entities.
   final Set<String> _extraEntityIds = {};
 
-  bool _isSubscribed(String entityId) =>
-      _extraEntityIds.contains(entityId) ||
-      HaEntities.allowlist.contains(entityId);
+  /// Seed the subscription with the base (non-room) entity ids before calling
+  /// [connect]. Safe to call multiple times; ids are deduplicated.
+  void setBaseEntityIds(Iterable<String> ids) => _extraEntityIds.addAll(ids);
+
+  bool _isSubscribed(String entityId) => _extraEntityIds.contains(entityId);
 
   Future<void> _subscribe() async {
     try {
       await _request({
         'type': 'subscribe_entities',
-        'entity_ids': [...HaEntities.allowlist, ..._extraEntityIds],
+        'entity_ids': [..._extraEntityIds],
       });
     } catch (_) {
       // Fallback for HA < 2022.9 — subscribe to all state_changed and filter.
@@ -254,7 +255,23 @@ class HaWebSocketService {
     }
   }
 
-  // ── Service calls ────────────────────────────────────────────────────────────
+  // ── Registry calls ───────────────────────────────────────────────────────────
+
+  /// Fetches all areas with their name and optional MDI icon.
+  Future<List<AreaEntry>> fetchAreas() async {
+    final result = await _request({'type': 'config/area_registry/list'})
+        .timeout(const Duration(seconds: 10));
+    if (result is! List) return const [];
+    return [
+      for (final a in result.cast<Map<String, dynamic>>())
+        if (a['area_id'] is String)
+          AreaEntry(
+            id: a['area_id'] as String,
+            name: a['name'] as String? ?? a['area_id'] as String,
+            icon: a['icon'] as String?,
+          ),
+    ];
+  }
 
   /// Fetches the area registry via WebSocket, returning area_id → mdi icon.
   /// Areas with no icon set are omitted from the result.

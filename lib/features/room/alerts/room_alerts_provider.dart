@@ -5,8 +5,9 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ha_flutter/config/ha_entities.dart';
+import 'package:ha_flutter/config/room_config.dart';
 import 'package:ha_flutter/features/room/alerts/alert_discovery.dart';
+import 'package:ha_flutter/ha/room_registry_provider.dart';
 import 'package:ha_flutter/features/room/alerts/room_alert.dart';
 import 'package:ha_flutter/ha/ha_providers.dart';
 import 'package:ha_flutter/ha/models/entity_state.dart';
@@ -129,7 +130,8 @@ final _momentaryTriggersProvider =
 /// Severity-ordered alerts for one room. Empty list means all clear.
 final roomAlertsProvider =
     Provider.autoDispose.family<List<RoomAlert>, String>((ref, roomId) {
-  final room = HaEntities.roomById(roomId);
+  final room = ref.watch(roomConfigProvider(roomId));
+  if (room == null) return const [];
   final result = computeRoomAlerts(
     room: room,
     discovered: ref.watch(roomAlertEntitiesProvider(roomId)),

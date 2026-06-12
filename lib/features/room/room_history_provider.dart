@@ -4,8 +4,8 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ha_flutter/config/ha_entities.dart';
 import 'package:ha_flutter/ha/ha_providers.dart';
+import 'package:ha_flutter/ha/room_registry_provider.dart';
 
 typedef TrendPoint = ({DateTime time, double value});
 
@@ -34,8 +34,9 @@ final roomHistoryProvider = FutureProvider.autoDispose
   final timer = Timer(const Duration(minutes: 5), link.close);
   ref.onDispose(timer.cancel);
 
-  final room = HaEntities.roomById(roomId);
+  final room = ref.watch(roomConfigProvider(roomId));
   final rest = ref.watch(haRestClientProvider);
+  if (room == null) return const [];
 
   final sources = <(TrendKind, String, String)>[
     if (room.temperatureSensor != null)

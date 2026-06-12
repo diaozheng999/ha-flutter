@@ -31,7 +31,7 @@ final haWebSocketServiceProvider = Provider<HaWebSocketService>((ref) {
   return service;
 });
 
-/// Area id → mdi icon string, fetched via WebSocket once the connection is up.
+/// Area id → MDI icon string, fetched via WebSocket once the connection is up.
 final areaIconsProvider = FutureProvider<Map<String, String>>((ref) async {
   await ref.watch(dashboardInitProvider.future);
   try {
@@ -41,19 +41,22 @@ final areaIconsProvider = FutureProvider<Map<String, String>>((ref) async {
   }
 });
 
-/// Runs the REST state bootstrap, then opens the WebSocket. The UI awaits this
-/// once so the first frame renders with real data rather than 70 spinners. A
-/// REST failure does not block the WebSocket connection.
+/// Runs the REST state bootstrap for standalone (non-room) entities, then
+/// opens the WebSocket. Room entities are bootstrapped separately by
+/// [roomConfigsProvider] after the registry is fetched.
 final dashboardInitProvider = FutureProvider<void>((ref) async {
+  final ws = ref.watch(haWebSocketServiceProvider);
   final repo = ref.watch(entityRepositoryProvider);
   final rest = ref.watch(haRestClientProvider);
+
+  ws.setBaseEntityIds(HaEntities.standaloneAllowlist);
   try {
-    final states = await rest.fetchStates(HaEntities.allowlist.toSet());
+    final states = await rest.fetchStates(HaEntities.standaloneAllowlist.toSet());
     repo.putAll(states);
   } catch (_) {
     // Bootstrap is best-effort; the WebSocket will deliver state regardless.
   }
-  await ref.watch(haWebSocketServiceProvider).connect();
+  await ws.connect();
 });
 
 /// Per-entity live state. The single read surface for all widgets.

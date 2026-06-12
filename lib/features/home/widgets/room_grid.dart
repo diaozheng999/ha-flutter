@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_material_design_icons/flutter_material_design_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ha_flutter/config/ha_entities.dart';
+import 'package:ha_flutter/config/room_config.dart';
 import 'package:ha_flutter/features/room/room_detail_screen.dart';
+import 'package:ha_flutter/ha/room_registry_provider.dart';
 import 'package:ha_flutter/ha/ha_providers.dart';
 import 'package:ha_flutter/ha/models/entity_state.dart';
 import 'package:ha_flutter/shared/theme/app_theme.dart';
@@ -14,23 +15,16 @@ import 'package:ha_flutter/shared/widgets/pending_overlay.dart';
 
 /// Responsive grid of room cards. Columns adapt to width (2 on phones, 3+ on
 /// wide / desktop windows).
-class RoomGrid extends StatelessWidget {
+class RoomGrid extends ConsumerWidget {
   const RoomGrid({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final rooms = ref.watch(roomConfigsProvider).valueOrNull ?? [];
     return LayoutBuilder(
       builder: (context, constraints) {
-        final columns = constraints.maxWidth > 900
-            ? 3
-            : constraints.maxWidth > 600
-                ? 3
-                : 2;
-        final ratio = constraints.maxWidth > 900
-            ? 1.5
-            : constraints.maxWidth > 600
-                ? 1.4
-                : 1.3;
+        final columns = constraints.maxWidth > 600 ? 3 : 2;
+        final ratio = constraints.maxWidth > 900 ? 1.5 : 1.3;
         return GridView.count(
           crossAxisCount: columns,
           shrinkWrap: true,
@@ -38,9 +32,7 @@ class RoomGrid extends StatelessWidget {
           mainAxisSpacing: 12,
           crossAxisSpacing: 12,
           childAspectRatio: ratio,
-          children: [
-            for (final room in HaEntities.rooms) RoomCard(room: room),
-          ],
+          children: [for (final room in rooms) RoomCard(room: room)],
         );
       },
     );

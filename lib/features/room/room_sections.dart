@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ha_flutter/config/ha_entities.dart';
+import 'package:ha_flutter/config/room_config.dart';
 import 'package:ha_flutter/ha/ha_providers.dart';
 
 /// Concept sections of the room detail screen. Declaration order is the
@@ -24,7 +24,7 @@ bool isMediaActiveState(String? state) =>
 List<RoomSection> availableSections(RoomConfig room,
     {required bool mediaActive}) {
   return [
-    if (room.climate != null || room.fan != null) RoomSection.climate,
+    if (room.climateDevices.isNotEmpty) RoomSection.climate,
     if (room.allLights.isNotEmpty) RoomSection.lights,
     if (room.mediaPlayer != null && mediaActive) RoomSection.media,
   ];

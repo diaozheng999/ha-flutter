@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ha_flutter/config/ha_entities.dart';
 import 'package:ha_flutter/features/home/widgets/active_devices_bar.dart';
 import 'package:ha_flutter/features/home/widgets/appliances_row.dart';
 import 'package:ha_flutter/features/home/widgets/config_selector.dart';
@@ -132,8 +131,8 @@ class _EnvironmentSummary extends StatelessWidget {
           kind: EnvKind.temperature,
           attribute: 'current_temperature',
         ),
-        EnvReading(entityId: HaEntities.lrHumiditySensor, kind: EnvKind.humidity),
-        EnvReading(entityId: HaEntities.bedroomPm25Sensor, kind: EnvKind.pm25),
+        EnvReading(entityId: 'sensor.shellywalldisplay_00a90b9db957_humidity', kind: EnvKind.humidity),
+        EnvReading(entityId: 'sensor.zhimi_sg_433492230_mb4_pm2_5_density_p_3_4', kind: EnvKind.pm25),
       ],
     );
   }

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_material_design_icons/flutter_material_design_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ha_flutter/config/ha_entities.dart';
+import 'package:ha_flutter/config/room_config.dart';
 import 'package:ha_flutter/features/room/room_sections.dart';
+import 'package:ha_flutter/ha/room_registry_provider.dart';
 import 'package:ha_flutter/features/room/widgets/room_alert_strip.dart';
 import 'package:ha_flutter/features/room/widgets/room_climate_section.dart';
 import 'package:ha_flutter/features/room/widgets/room_lights_section.dart';
@@ -20,8 +21,8 @@ import 'package:ha_flutter/shared/widgets/glass_card.dart';
 
 /// Per-room detail with its own background, ambient light tinting, and the
 /// room's device controls organised into concept sections. Wide windows
-/// (≥ 840 dp) get a sidebar + content pane; narrow ones a compact header with
-/// a section chip selector. Pushed from the room grid.
+/// (≥ 840 dp) get a sidebar with bookmark nav + scrollable content pane;
+/// narrow ones a compact scrollable list. Pushed from the room grid.
 class RoomDetailScreen extends ConsumerStatefulWidget {
   final String roomId;
   const RoomDetailScreen({super.key, required this.roomId});
@@ -31,12 +32,29 @@ class RoomDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _RoomDetailScreenState extends ConsumerState<RoomDetailScreen> {
-  // Survives resizes across the breakpoint; reset only by leaving the screen.
+  // Highlighted bookmark — tracks last tapped, not scroll position.
   RoomSection? _selected;
+  final _sectionKeys = <RoomSection, GlobalKey>{
+    for (final s in RoomSection.values) s: GlobalKey(),
+  };
+
+  void _scrollTo(RoomSection section) {
+    setState(() => _selected = section);
+    final ctx = _sectionKeys[section]?.currentContext;
+    if (ctx != null) {
+      Scrollable.ensureVisible(
+        ctx,
+        duration: const Duration(milliseconds: 350),
+        curve: Curves.easeInOut,
+        alignment: 0.0,
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final room = HaEntities.roomById(widget.roomId);
+    final room = ref.watch(roomConfigProvider(widget.roomId));
+    if (room == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
     // Ambient tint from on lights → animated middle-gradient overlay (600 ms).
     final lights = [
@@ -54,8 +72,9 @@ class _RoomDetailScreenState extends ConsumerState<RoomDetailScreen> {
       room,
       mediaActive: isMediaActiveState(mediaState),
     );
+    // Keep selected valid when sections change (e.g. media player turns off).
     final selected = (_selected != null && sections.contains(_selected))
-        ? _selected!
+        ? _selected
         : (sections.isEmpty ? null : sections.first);
 
     final wide = MediaQuery.sizeOf(context).width >= kWideLayoutMinWidth;
@@ -94,7 +113,7 @@ class _RoomDetailScreenState extends ConsumerState<RoomDetailScreen> {
           body: SafeArea(
             child: wide
                 ? _wideBody(room, sections, selected)
-                : _compactBody(room, sections, selected),
+                : _compactBody(room, sections),
           ),
         ),
       ],
@@ -114,24 +133,32 @@ class _RoomDetailScreenState extends ConsumerState<RoomDetailScreen> {
               room: room,
               sections: sections,
               selected: selected,
-              onSelect: (s) => setState(() => _selected = s),
+              onSelect: _scrollTo,
             ),
           ),
         ),
         Expanded(
-          child: ListView(
+          child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-            children: [
-              if (selected != null) _sectionContent(room, selected, wide: true),
-            ],
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final section in sections) ...[
+                  KeyedSubtree(
+                    key: _sectionKeys[section],
+                    child: _sectionContent(room, section, wide: true),
+                  ),
+                  const SizedBox(height: 24),
+                ],
+              ],
+            ),
           ),
         ),
       ],
     );
   }
 
-  Widget _compactBody(
-      RoomConfig room, List<RoomSection> sections, RoomSection? selected) {
+  Widget _compactBody(RoomConfig room, List<RoomSection> sections) {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
@@ -139,16 +166,10 @@ class _RoomDetailScreenState extends ConsumerState<RoomDetailScreen> {
         const SizedBox(height: 12),
         RoomAlertStrip(roomId: room.id),
         const SizedBox(height: 12),
-        if (sections.length > 1) ...[
-          _SectionChips(
-            room: room,
-            sections: sections,
-            selected: selected,
-            onSelect: (s) => setState(() => _selected = s),
-          ),
+        for (final section in sections) ...[
+          _sectionContent(room, section, wide: false),
           const SizedBox(height: 16),
         ],
-        if (selected != null) _sectionContent(room, selected, wide: false),
       ],
     );
   }
@@ -201,42 +222,6 @@ class _CompactHeader extends ConsumerWidget {
                     style: const TextStyle(fontWeight: FontWeight.w600))
                 : Wrap(runSpacing: 4, children: readings),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Horizontal section selector with the same live status text as the sidebar.
-class _SectionChips extends ConsumerWidget {
-  final RoomConfig room;
-  final List<RoomSection> sections;
-  final RoomSection? selected;
-  final ValueChanged<RoomSection> onSelect;
-
-  const _SectionChips({
-    required this.room,
-    required this.sections,
-    required this.selected,
-    required this.onSelect,
-  });
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          for (final section in sections) ...[
-            ChoiceChip(
-              avatar: Icon(section.icon, size: 18),
-              label: Text(
-                  '${section.label} · ${sectionStatusLine(ref, room, section)}'),
-              selected: section == selected,
-              onSelected: (_) => onSelect(section),
-            ),
-            const SizedBox(width: 8),
-          ],
         ],
       ),
     );

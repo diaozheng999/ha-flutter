@@ -1,70 +1,8 @@
-// Single source of truth for entity ids, room-to-entity mapping, and the
-// WebSocket subscription allowlist. Room order is hardcoded for v1.
+// Standalone (non-room) entity ids and the allowlist seeded into the
+// WebSocket subscription before room discovery runs.
+// Room device entity ids are added dynamically by room_registry_provider.dart.
 
-import 'package:ha_flutter/config/alert_rules.dart';
-
-export 'package:ha_flutter/config/alert_rules.dart';
-
-/// Per-room device inventory.
-class RoomConfig {
-  final String id;
-  final String name;
-
-  /// Primary light *group* entity for the room (controls all lights at once).
-  final String? lightGroup;
-
-  /// Individually addressable lights within the room.
-  final List<String> individualLights;
-
-  final String? fan;
-  final String? climate;
-  final String? mediaPlayer;
-
-  /// Adaptive lighting switch governing this room, if any.
-  final String? adaptiveLightingSwitch;
-
-  /// Environment sensors surfaced in this room's header/sidebar. Temperature
-  /// needs a real sensor entity (not the AC attribute) for history graphs.
-  final String? temperatureSensor;
-  final String? humiditySensor;
-  final String? illuminanceSensor;
-  final String? pm25Sensor;
-
-  /// Declarative alert rules for semantic events (activity notices,
-  /// consumable thresholds). Standard safety/battery/problem sensors are
-  /// autodiscovered from the HA registries and need no entry here.
-  final List<AlertRule> alertRules;
-
-  const RoomConfig({
-    required this.id,
-    required this.name,
-    this.lightGroup,
-    this.individualLights = const [],
-    this.fan,
-    this.climate,
-    this.mediaPlayer,
-    this.adaptiveLightingSwitch,
-    this.temperatureSensor,
-    this.humiditySensor,
-    this.illuminanceSensor,
-    this.pm25Sensor,
-    this.alertRules = const [],
-  });
-
-  /// All light entities (group + individuals) for aggregate state/glow.
-  List<String> get allLights => [
-        ?lightGroup,
-        ...individualLights,
-      ];
-
-  /// Controllable device entities, monitored for offline (unavailable) alerts.
-  List<String> get deviceEntities => [
-        ...allLights,
-        ?fan,
-        ?climate,
-        ?mediaPlayer,
-      ];
-}
+export 'package:ha_flutter/config/room_config.dart';
 
 class HaEntities {
   HaEntities._();
@@ -91,7 +29,6 @@ class HaEntities {
   static const frigatePerson = 'image.doorbell_frigate_person';
   static const frigateBackpack = 'image.doorbell_frigate_backpack';
 
-  // Living Room camera PTZ
   static const camPanLeft = 'button.living_room_camera_pan_left';
   static const camPanRight = 'button.living_room_camera_pan_right';
   static const camTiltUp = 'button.living_room_camera_tilt_up';
@@ -99,29 +36,11 @@ class HaEntities {
   static const camPanDegrees = 'number.living_room_camera_pan_degrees';
   static const camTiltDegrees = 'number.living_room_camera_tilt_degrees';
 
-  // Living Room environment (ShellyWallDisplay)
-  static const lrTemperatureSensor =
-      'sensor.shellywalldisplay_00a90b9db957_temperature';
-  static const lrHumiditySensor =
-      'sensor.shellywalldisplay_00a90b9db957_humidity';
-  static const lrIlluminanceSensor =
-      'sensor.shellywalldisplay_00a90b9db957_illuminance';
-  // Bedroom air quality (Xiaomi air purifier)
-  static const bedroomPm25Sensor =
-      'sensor.zhimi_sg_433492230_mb4_pm2_5_density_p_3_4';
-
-  // DB cabinet
   static const dbCabinetTemp = 'sensor.w02_001af7_temperature';
   static const dbCabinetFanSpeed = 'sensor.w02_001af7_fan_speed';
   static const dbCabinetFan = 'fan.w02_001af7';
 
   static const configSelect = 'input_select.configuration';
-
-  // ── Adaptive lighting switches (by room) ─────────────────────────────────
-  static const alLivingRoom = 'switch.living_room_kitchen_adaptive_lighting_main';
-  static const alKitchen = 'switch.adaptive_lighting_kitchen_lights';
-  static const alBedroom = 'switch.bedrooms_adaptive_lighting_bedrooms';
-  static const alStudy = 'switch.study_lights_adaptive_lighting_study_lights';
 
   // ── Power-cycling switches (label → entity) ──────────────────────────────
   static const powerCycleSwitches = <({String label, String entity})>[
@@ -136,156 +55,30 @@ class HaEntities {
     (label: 'Study Light/Fan', entity: 'switch.study_switch_l1'),
   ];
 
-  // ── Rooms ─────────────────────────────────────────────────────────────────
-  static const rooms = <RoomConfig>[
-    RoomConfig(
-      id: 'living_room',
-      name: 'Living Room',
-      lightGroup: 'light.living_room_lights',
-      individualLights: [
-        'light.0x001788010d9450aa', // hue window
-        'light.0x001788010d945872', // hue entrance
-        'light.shellywalldisplay_00a90b9db957_walkway_spotlight',
-      ],
-      fan: 'fan.living_room_fan',
-      climate: 'climate.living_room_ac',
-      mediaPlayer: 'media_player.lg_webos_tv_qned82asa_3',
-      adaptiveLightingSwitch: alLivingRoom,
-      temperatureSensor: lrTemperatureSensor,
-      humiditySensor: lrHumiditySensor,
-      illuminanceSensor: lrIlluminanceSensor,
-    ),
-    RoomConfig(
-      id: 'kitchen',
-      name: 'Kitchen',
-
-      lightGroup: 'light.kitchen_lights',
-      individualLights: [
-        'light.kitchen_spotlights',
-        'light.kitchen_ceiling_light',
-        'light.0xa4c138d640ca3df3',
-        'light.0xa4c138d1bf23fbfe',
-        'light.0xa4c138467b2c9455',
-        'light.0xa4c138f0bf4d2de3',
-        'light.0xa4c1380314577806',
-        'light.pantry_lights',
-        'light.dining_table_lights',
-      ],
-      adaptiveLightingSwitch: alKitchen,
-      alertRules: [
-        // Washer lives in the service yard off the kitchen; reassign if the
-        // HA area mapping says otherwise.
-        AlertRule.stateIn(
-          entity: washerStatus,
-          states: ['end', 'finish', 'finished', 'complete', 'completed', 'done'],
-          severity: RoomAlertSeverity.activity,
-          label: 'Laundry done',
-        ),
-        // Pending entity-id confirmation (add once identified in HA):
-        // - Doorbell ring (momentary: true, severity: activity, "Doorbell")
-        // - Dishwasher done (severity: activity, "Dishwasher done")
-      ],
-    ),
-    RoomConfig(
-      id: 'bedroom',
-      name: 'Bedroom',
-
-      lightGroup: 'light.bedroom_light',
-      individualLights: ['light.bedroom_spotlight'],
-      fan: 'fan.bedroom_fan',
-      climate: 'climate.bedroom_ac',
-      mediaPlayer: 'media_player.bedroom_speaker_2',
-      adaptiveLightingSwitch: alBedroom,
-      pm25Sensor: bedroomPm25Sensor,
-      // Pending entity-id confirmation: purifier filter-life sensor →
-      // AlertRule.numericBelow(threshold: 10, severity: maintenance,
-      // label: 'Replace purifier filter').
-    ),
-    RoomConfig(
-      id: 'study',
-      name: 'Study',
-
-      lightGroup: 'light.study_light',
-      fan: 'fan.study_fan',
-      climate: 'climate.study_ac',
-      mediaPlayer: 'media_player.study_speaker_2',
-      adaptiveLightingSwitch: alStudy,
-    ),
-    RoomConfig(
-      id: 'entrance',
-      name: 'Entrance',
-
-      lightGroup: 'light.entry_lights',
-      individualLights: ['light.dining_table_lights'],
-    ),
-    RoomConfig(
-      id: 'pantry',
-      name: 'Pantry',
-
-      lightGroup: 'light.pantry_lights',
-      individualLights: [
-        'light.walkway_spotlight_inner',
-        'light.walkway_spotlight_outer',
-      ],
-      mediaPlayer: 'media_player.pantry_display_2',
-    ),
-  ];
-
-  static RoomConfig roomById(String id) =>
-      rooms.firstWhere((r) => r.id == id);
-
-  /// Rooms that have adaptive lighting control (for the scenes screen).
-  static List<RoomConfig> get roomsWithAdaptiveLighting =>
-      rooms.where((r) => r.adaptiveLightingSwitch != null).toList();
-
-  /// All media player entities referenced across rooms (de-duplicated).
-  static List<String> get mediaPlayers => {
-        for (final r in rooms)
-          if (r.mediaPlayer != null) r.mediaPlayer!,
-      }.toList();
-
-  // ── WebSocket subscription allowlist ─────────────────────────────────────
-  /// The explicit set of entity ids the dashboard subscribes to. Keeping this
-  /// tight avoids flooding the Riverpod graph with the instance's 600+ entities.
-  static List<String> get allowlist {
-    final ids = <String>{
-      weather,
-      sun,
-      ...persons,
-      vacuum,
-      vacuumMap,
-      washerStatus,
-      washerTimeLeft,
+  // ── Standalone allowlist seeded before room discovery ────────────────────
+  static List<String> get standaloneAllowlist => [
+        weather,
+        sun,
+        ...persons,
+        vacuum,
+        vacuumMap,
+        washerStatus,
+        washerTimeLeft,
+        alarm,
+        doorbellCamera,
+        livingRoomCamera,
+        frigatePerson,
+        frigateBackpack,
+        camPanDegrees,
+        camTiltDegrees,
+        dbCabinetTemp,
+        dbCabinetFanSpeed,
+        dbCabinetFan,
+        configSelect,
+        for (final s in powerCycleSwitches) s.entity,
       waterHeater,
-      alarm,
-      doorbellCamera,
-      livingRoomCamera,
-      frigatePerson,
-      frigateBackpack,
-      camPanDegrees,
-      camTiltDegrees,
-      lrTemperatureSensor,
-      lrHumiditySensor,
-      lrIlluminanceSensor,
-      bedroomPm25Sensor,
-      dbCabinetTemp,
-      dbCabinetFanSpeed,
-      dbCabinetFan,
-      configSelect,
-      alLivingRoom,
-      alKitchen,
-      alBedroom,
-      alStudy,
-      for (final s in powerCycleSwitches) s.entity,
-      for (final r in rooms) ...[
-        if (r.lightGroup != null) r.lightGroup!,
-        ...r.individualLights,
-        if (r.fan != null) r.fan!,
-        if (r.climate != null) r.climate!,
-        if (r.mediaPlayer != null) r.mediaPlayer!,
-        for (final rule in r.alertRules) rule.entity,
-      ],
-    };
-    return ids.toList();
-  }
+      ];
+
+  // Keep backward-compat alias used by existing callers.
+  static List<String> get allowlist => standaloneAllowlist;
 }

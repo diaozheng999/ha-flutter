@@ -36,19 +36,20 @@ class _RoomLightsSectionState extends ConsumerState<RoomLightsSection> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (group != null) ...[
-          LightToggleWidget(entityId: group, name: 'All ${room.name} lights'),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: kControlMaxWidth),
+            child: LightToggleWidget(
+                entityId: group, name: 'All ${room.name} lights'),
+          ),
           const SizedBox(height: 8),
-          GlassCard(
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: kControlMaxWidth),
-                child: Column(
-                  children: [
-                    BrightnessSlider(entityId: group),
-                    ColorTemperatureSlider(entityId: group),
-                  ],
-                ),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: kControlMaxWidth),
+            child: GlassCard(
+              child: Column(
+                children: [
+                  BrightnessSlider(entityId: group),
+                  ColorTemperatureSlider(entityId: group),
+                ],
               ),
             ),
           ),
