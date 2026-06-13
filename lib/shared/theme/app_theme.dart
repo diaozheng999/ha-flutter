@@ -1,5 +1,16 @@
 import 'package:flutter/material.dart';
 
+/// Maximum track width for slider-based controls inside wide content panes —
+/// sliders cap here instead of stretching across the window.
+const double kControlMaxWidth = 480;
+
+/// Width breakpoint (Material 3 "expanded") above which screens may use a
+/// sidebar layout instead of the compact single-column layout.
+const double kWideLayoutMinWidth = 840;
+
+/// Fixed width of the room sidebar in the wide layout.
+const double kRoomSidebarWidth = 300;
+
 /// App-specific design tokens not covered by [ColorScheme], exposed as a
 /// [ThemeExtension] so widgets read them via `Theme.of(context)`.
 @immutable

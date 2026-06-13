@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ha_flutter/config/ha_entities.dart';
 import 'package:ha_flutter/features/home/home_providers.dart';
+import 'package:ha_flutter/ha/room_registry_provider.dart';
 import 'package:ha_flutter/shared/widgets/media_mini_player.dart';
 
 /// Now-playing widget: appears when any media player is playing and cycles
@@ -26,10 +26,8 @@ class _NowPlayingState extends ConsumerState<NowPlaying> {
   }
 
   String _roomFor(String mediaPlayer) {
-    for (final r in HaEntities.rooms) {
-      if (r.mediaPlayer == mediaPlayer) return r.name;
-    }
-    return '';
+    final rooms = ref.read(roomConfigsProvider).valueOrNull ?? [];
+    return rooms.where((r) => r.mediaPlayer == mediaPlayer).firstOrNull?.name ?? '';
   }
 
   @override

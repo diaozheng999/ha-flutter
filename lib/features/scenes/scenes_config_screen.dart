@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ha_flutter/config/ha_entities.dart';
 import 'package:ha_flutter/features/home/widgets/scene_launch_row.dart';
+import 'package:ha_flutter/ha/room_registry_provider.dart';
 import 'package:ha_flutter/features/scenes/scenes_providers.dart';
 import 'package:ha_flutter/ha/ha_providers.dart';
 import 'package:ha_flutter/shared/theme/app_theme.dart';
@@ -145,7 +146,8 @@ class _AdaptiveLightingSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Column(
       children: [
-        for (final room in HaEntities.roomsWithAdaptiveLighting)
+        for (final room in ref.watch(roomConfigsProvider).valueOrNull ?? <RoomConfig>[])
+          if (room.adaptiveLightingSwitch != null)
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: _AdaptiveRow(

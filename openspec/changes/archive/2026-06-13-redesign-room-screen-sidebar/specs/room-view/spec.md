@@ -1,40 +1,6 @@
-# Room View
+# Room View — Delta
 
-## Purpose
-
-Defines the room detail screen: navigation, responsive layout shell (sidebar on wide / compact on narrow), room header with environment data, ambient background tinting, concept section navigation, lights section, fan section, AC thermostat section, environment trend graph, media player section, and the per-room entity inventory.
-
-## Requirements
-
-### Requirement: Room detail screen navigation
-The app SHALL push a `RoomDetailScreen` when a room card is tapped from the home grid or Rooms tab. The screen SHALL receive the room identifier and load all entities assigned to that room. The back action SHALL pop to the originating screen. The screen SHALL NOT be a separate bottom-nav tab.
-
-#### Scenario: Navigate to Living Room
-- **WHEN** the user taps the Living Room room card
-- **THEN** `RoomDetailScreen` SHALL push with the Living Room room identifier and display Living Room entities
-
-#### Scenario: Back navigation returns to home grid
-- **WHEN** the user presses back from a room detail screen reached via the home grid
-- **THEN** the app SHALL pop back to the home screen with the room grid visible
-
----
-
-### Requirement: Room header with environment data
-The room detail screen SHALL display the room name, room icon, and the room's environment readings (temperature from AC `current_temperature`, humidity and illuminance from ShellyWallDisplay for Living Room only, PM2.5 from the air purifier sensor for Bedroom only). In the wide layout these SHALL render in the room sidebar; in the compact layout they SHALL render as a slim header row above the section selector. The screen SHALL NOT render a separate full-width header card.
-
-#### Scenario: Living Room shows temperature, humidity, illuminance
-- **WHEN** the Living Room detail screen is displayed
-- **THEN** temperature from `climate.living_room_ac` `current_temperature`, humidity from `sensor.shellywalldisplay_00a90b9db957_humidity`, and illuminance from `sensor.shellywalldisplay_00a90b9db957_illuminance` SHALL be visible in the sidebar (wide) or header row (compact)
-
-#### Scenario: Bedroom shows PM2.5
-- **WHEN** the Bedroom detail screen is displayed
-- **THEN** PM2.5 from `sensor.zhimi_sg_433492230_mb4_pm2_5_density_p_3_4` SHALL be shown alongside the AC temperature
-
-#### Scenario: Pantry shows no environment data
-- **WHEN** the Pantry detail screen is displayed
-- **THEN** no temperature, humidity, or PM2.5 readings SHALL be displayed
-
----
+## ADDED Requirements
 
 ### Requirement: Responsive room layout shell
 The room detail screen SHALL adapt its layout to the available width using a single breakpoint at 840 dp. At widths ≥ 840 dp the screen SHALL render a sidebar layout: a fixed-width (~300 dp) room sidebar on the left and a content pane on the right. At widths < 840 dp the screen SHALL render a compact layout: a slim room header row, a horizontal section selector, and the section content below. Section selection state SHALL be preserved when the window is resized across the breakpoint.
@@ -117,18 +83,22 @@ The Climate & Air section SHALL display a 24-hour trend graph below the climate 
 - **WHEN** the user navigates away and back to the section
 - **THEN** the graph SHALL render from the cached series without a new REST request
 
----
+## MODIFIED Requirements
 
-### Requirement: Room ambient background tinting
-When inside a room detail screen, the `BackgroundEngine` gradient SHALL gain a third colour stop in the middle derived from the average `hs_color` of all currently-on lights in that room, expressed as HSL(h, 0.6, 0.15). When all room lights are off the ambient tint SHALL be transparent. The tint SHALL animate in/out over 600 ms when lights turn on or off.
+### Requirement: Room header with environment data
+The room detail screen SHALL display the room name, room icon, and the room's environment readings (temperature from AC `current_temperature`, humidity and illuminance from ShellyWallDisplay for Living Room only, PM2.5 from the air purifier sensor for Bedroom only). In the wide layout these SHALL render in the room sidebar; in the compact layout they SHALL render as a slim header row above the section selector. The screen SHALL NOT render a separate full-width header card.
 
-#### Scenario: Warm tint when Hue lights are on
-- **WHEN** `light.hue_living_room_window` is on with `hs_color: [30, 80]` (warm amber)
-- **THEN** the Living Room detail screen background SHALL blend a warm amber tint into the gradient middle stop
+#### Scenario: Living Room shows temperature, humidity, illuminance
+- **WHEN** the Living Room detail screen is displayed
+- **THEN** temperature from `climate.living_room_ac` `current_temperature`, humidity from `sensor.shellywalldisplay_00a90b9db957_humidity`, and illuminance from `sensor.shellywalldisplay_00a90b9db957_illuminance` SHALL be visible in the sidebar (wide) or header row (compact)
 
-#### Scenario: Tint clears when all lights off
-- **WHEN** all Living Room lights turn off
-- **THEN** the ambient tint SHALL fade to transparent over 600 ms
+#### Scenario: Bedroom shows PM2.5
+- **WHEN** the Bedroom detail screen is displayed
+- **THEN** PM2.5 from `sensor.zhimi_sg_433492230_mb4_pm2_5_density_p_3_4` SHALL be shown alongside the AC temperature
+
+#### Scenario: Pantry shows no environment data
+- **WHEN** the Pantry detail screen is displayed
+- **THEN** no temperature, humidity, or PM2.5 readings SHALL be displayed
 
 ---
 
@@ -203,21 +173,3 @@ The Media section SHALL be available when the room has an associated `media_play
 #### Scenario: Media section hidden when player is off
 - **WHEN** `media_player.bedroom_speaker_2` is `off`
 - **THEN** the Bedroom detail screen SHALL NOT show a Media section or navigation item
-
----
-
-### Requirement: Room entity inventory (per-room device mapping)
-The app SHALL use the following fixed entity-to-room mapping for v1. This mapping SHALL be hardcoded and not user-configurable in v1.
-
-| Room | Lights group | Individual lights | Fan | AC | Media player |
-|---|---|---|---|---|---|
-| Living Room | `light.living_room_lights` | hue_window, hue_entrance, walkway_spotlight | `fan.living_room_fan` | `climate.living_room_ac` | `media_player.lg_webos_tv_qned82asa_3` |
-| Kitchen | `light.kitchen_lights` | ceiling, spot 1–3, coffee 1–2, pantry_lights, dining_table_lights | — | — | `media_player.pantry_display_2` |
-| Bedroom | `light.bedroom_light` | bedroom_spotlight | `fan.bedroom_fan` | `climate.bedroom_ac` | `media_player.bedroom_speaker_2` |
-| Study | `light.study_light` | — | `fan.study_fan` | `climate.study_ac` | `media_player.study_speaker_2` |
-| Entrance | `light.entry_lights` | dining_table_lights | — | — | — |
-| Pantry | `light.pantry_lights` | walkway_spotlight_inner, walkway_spotlight_outer | — | — | `media_player.pantry_display_2` |
-
-#### Scenario: Kitchen shows no fan or AC section
-- **WHEN** the Kitchen detail screen is displayed
-- **THEN** the fan section and AC thermostat section SHALL NOT render
