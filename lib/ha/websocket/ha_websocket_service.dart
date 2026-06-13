@@ -58,6 +58,11 @@ class HaWebSocketService {
 
   Future<void> connect() async {
     _closedByUser = false;
+    // Tear down any pre-existing socket before opening a new one.  Without
+    // this the old subscription's onDone fires after reconnect starts and
+    // calls _onSocketClosed() a second time, producing an infinite reconnect
+    // loop.
+    await _teardownSocket();
     _setStatus(_backoffSeconds == 1
         ? ConnectionStatus.connecting
         : ConnectionStatus.reconnecting);

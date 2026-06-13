@@ -72,7 +72,12 @@ EntityState entitySnapshot(Ref ref, String entityId) =>
 
 final connectionStatusProvider = StreamProvider<ConnectionStatus>((ref) {
   final service = ref.watch(haWebSocketServiceProvider);
-  return service.status;
+  // Prepend the current status so new subscribers never start in AsyncLoading,
+  // which would cause the ConnectionChip to flash on every navigation.
+  return () async* {
+    yield service.currentStatus;
+    yield* service.status;
+  }();
 });
 
 final pendingEntitiesProvider = StreamProvider<Set<String>>((ref) {

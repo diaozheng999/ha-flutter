@@ -10,6 +10,9 @@ class RoomMediaSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MediaMiniPlayer(entityId: room.mediaPlayer!);
+    return MediaMiniPlayer(
+      entityId: room.mediaPlayer!,
+      contextLabel: room.mediaPlayer,
+    );
   }
 }

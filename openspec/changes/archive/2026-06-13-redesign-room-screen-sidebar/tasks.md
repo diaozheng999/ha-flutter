@@ -42,5 +42,5 @@
 ## 7. Verification & docs
 
 - [x] 7.1 Add widget/unit tests: section availability per room config, default/single-section behavior, alert provider severity ordering and all-clear emptiness, registry area→room matching and device-class selection, activity alert lifetime, `LightTile` brightness-to-0 calls `light.turn_off`
-- [ ] 7.2 Run the app at desktop width and ~400 dp width; verify Living Room (all sections + trend graph), Pantry (lights only, no nav), an `unavailable` entity producing an offline alert, and discovered battery sensors appearing without config
-- [ ] 7.3 `flutter analyze` and `flutter build windows` pass
+- [x] 7.2 Run the app at desktop width and ~400 dp width; verify Living Room (all sections + trend graph), Pantry (lights only, no nav), an `unavailable` entity producing an offline alert, and discovered battery sensors appearing without config
+- [x] 7.3 `flutter analyze` and `flutter build windows` pass

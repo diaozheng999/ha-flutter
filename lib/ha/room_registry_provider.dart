@@ -2,6 +2,7 @@
 // registries. Flutter-side overrides (alert rules, adaptive lighting, sensor
 // assignments) are applied on top via room_overrides.dart.
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ha_flutter/config/room_config.dart';
 import 'package:ha_flutter/config/room_overrides.dart';
@@ -13,12 +14,16 @@ import 'package:ha_flutter/ha/models/room_device.dart';
 /// then alphabetically. Only areas that contain at least one controllable
 /// device (climate, fan, purifier, light, media player) are included.
 final roomConfigsProvider = FutureProvider<List<RoomConfig>>((ref) async {
+  try {
   await ref.watch(dashboardInitProvider.future);
   final ws = ref.read(haWebSocketServiceProvider);
 
   final areas = await ws.fetchAreas();
   final entityList = await ws.fetchEntityRegistry();
   final deviceList = await ws.fetchDeviceRegistry();
+  if (kDebugMode) {
+    debugPrint('[RoomRegistry] areas=${areas.length} entities=${entityList.length} devices=${deviceList.length}');
+  }
 
   // ── Build lookup maps ──────────────────────────────────────────────────────
 
@@ -26,15 +31,16 @@ final roomConfigsProvider = FutureProvider<List<RoomConfig>>((ref) async {
 
   // Group enabled entities by device_id.
   final entitiesByDevice = <String, List<EntityRegistryEntry>>{};
-  // Light helper entities assigned directly to an area (no device).
-  final lightHelpersByArea = <String, List<EntityRegistryEntry>>{};
+  // Controllable entities assigned directly to an area (no device) — e.g.
+  // template fans/lights, virtual media players.
+  final standaloneByArea = <String, List<EntityRegistryEntry>>{};
 
   for (final e in entityList) {
     if (e.disabledBy != null) continue;
     if (e.deviceId != null) {
       entitiesByDevice.putIfAbsent(e.deviceId!, () => []).add(e);
-    } else if (e.domain == 'light' && e.areaId != null) {
-      lightHelpersByArea.putIfAbsent(e.areaId!, () => []).add(e);
+    } else if (e.areaId != null && _isControllableDomain(e.domain)) {
+      standaloneByArea.putIfAbsent(e.areaId!, () => []).add(e);
     }
   }
 
@@ -72,16 +78,27 @@ final roomConfigsProvider = FutureProvider<List<RoomConfig>>((ref) async {
       ));
     }
 
-    // Light helper groups (HA helpers assigned directly to area, no device).
-    for (final e in lightHelpersByArea[areaId] ?? <EntityRegistryEntry>[]) {
+    // Standalone entities assigned directly to area (no device) — template
+    // fans, light helpers, virtual media players, etc. Group them by domain
+    // so each domain becomes one RoomDevice.
+    final standaloneEntries = standaloneByArea[areaId] ?? <EntityRegistryEntry>[];
+    final standaloneByDomain = <String, List<EntityRegistryEntry>>{};
+    for (final e in standaloneEntries) {
+      standaloneByDomain.putIfAbsent(e.domain, () => []).add(e);
+    }
+    for (final domainEntries in standaloneByDomain.values) {
+      final role = _detectRole(domainEntries);
+      if (role == DeviceRole.unknown) continue;
+      final entityMap = _extractEntities(role, domainEntries);
+      if (entityMap.isEmpty) continue;
+      final first = domainEntries.first;
       roomDevices.add(RoomDevice(
-        deviceId: 'helper_${e.entityId}',
-        name: e.entityId
-            .replaceFirst('light.', '')
+        deviceId: 'standalone_${first.entityId}',
+        name: (first.entityId.split('.').skip(1).join('.'))
             .replaceAll('_', ' '),
-        role: DeviceRole.light,
-        entities: {'primary': e.entityId},
-        isGroup: true,
+        role: role,
+        entities: entityMap,
+        isGroup: role == DeviceRole.light,
       ));
     }
 
@@ -102,6 +119,14 @@ final roomConfigsProvider = FutureProvider<List<RoomConfig>>((ref) async {
     ));
   }
 
+  if (kDebugMode) {
+    debugPrint('[RoomRegistry] built ${rooms.length} rooms: ${rooms.map((r) => r.id).join(', ')}');
+    for (final r in rooms) {
+      for (final d in r.devices) {
+        debugPrint('[RoomRegistry]   ${r.id} | ${d.role.name} | ${d.name} | ${d.entities}');
+      }
+    }
+  }
   rooms.sort((a, b) {
     final ao = roomOverrides[a.id]?.sortOrder ?? 999;
     final bo = roomOverrides[b.id]?.sortOrder ?? 999;
@@ -133,6 +158,10 @@ final roomConfigsProvider = FutureProvider<List<RoomConfig>>((ref) async {
   await ws.extendSubscription(allEntityIds);
 
   return rooms;
+  } catch (e, st) {
+    if (kDebugMode) debugPrint('[RoomRegistry] ERROR: $e\n$st');
+    rethrow;
+  }
 });
 
 /// Single-room lookup; null while [roomConfigsProvider] is loading.
@@ -143,6 +172,14 @@ final roomConfigProvider = Provider.family<RoomConfig?, String>((ref, id) {
       ?.where((r) => r.id == id)
       .firstOrNull;
 });
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+bool _isControllableDomain(String domain) =>
+    domain == 'light' ||
+    domain == 'fan' ||
+    domain == 'media_player' ||
+    domain == 'climate';
 
 // ── Role detection ────────────────────────────────────────────────────────────
 
