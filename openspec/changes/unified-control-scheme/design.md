@@ -23,7 +23,7 @@ Constraint: this is a presentation/interaction-coherence change. HA service-call
 **Non-Goals:**
 - No new device domains, no new HA services, no data-layer or model changes.
 - No user-configurable theming/customisation; tokens stay compile-time constants.
-- No redesign of non-room surfaces (home overview, security, maintenance) beyond what falls out of shared-widget changes; their use of the shared widgets continues to work.
+- No layout redesign of non-room surfaces (home overview, security, maintenance); their use of the shared widgets continues to work. Surface and accent **conformance** on those screens is in scope (Decision 9) — one glass recipe, token-only accents, shared selector treatment — but their structure does not change.
 - No change to the room navigation model (room detail is still pushed, not a tab) or the concept-section grouping itself — only how controls inside it look and how power is surfaced.
 
 ## Decisions
@@ -32,7 +32,7 @@ Constraint: this is a presentation/interaction-coherence change. HA service-call
 Every device control is described by the same five layers, in priority order, and the design language renders each layer the same way regardless of device category:
 
 1. **Availability** — reachable or not (HA `unavailable` / `unknown`). The outermost gate: an unavailable device dims its card (40% opacity), disables every control, and shows "—" for readings rather than stale values. A device can be available but off.
-2. **On/Off (power)** — the power state, meaningful only when available. Drives the on→glow / off→muted treatment and the `PowerToggle`.
+2. **On/Off (power)** — the power state, meaningful only when available. Drives the on/off treatment (rationed glow, Decision 2) and the `PowerToggle`.
 3. **Sensors** — read-only telemetry the device publishes (e.g. AC current temperature, purifier PM2.5 + filter life). Rendered as `ReadingPill`s, shown whenever the device is available — including when it is off (a purifier still reports PM2.5). Sensors are never interactive.
 4. **Control surface** — the writable affordances (the card body). Individual controls may be enabled/disabled by the layers above (e.g. AC setpoint buttons disabled when off, while the mode selector stays active so the user can turn it back on).
 5. **Standard controls per category** — each device category exposes a fixed, canonical control set so every AC looks like every other AC, every fan like every other fan, etc. Optional controls render only when the entity advertises support.
@@ -48,13 +48,17 @@ The `DeviceControlDescriptor` (Decision 3) exposes layers 1–3 uniformly; `Cont
 | Air conditioning (`climate`) | current temperature; current humidity if reported | power; setpoint ±0.5 °C (arc + buttons); HVAC mode selector; fan mode / swing if exposed |
 | Fan (`fan`) | — | power; speed % (arc dial); oscillation toggle if exposed; preset mode if exposed |
 | Air purifier | PM2.5; filter life | power; mode selector (Auto / Sleep / Favorite); favourite level if exposed |
-| Lights (`light`) | — | power (group + per-light); brightness slider; colour-temperature slider if CCT-capable; colour control if RGB-capable; adaptive-lighting option chip when present |
+| Lights (`light`) | — | power (group + per-light); brightness slider; colour-temperature slider if CCT-capable; colour control if RGB-capable (deferred, D16); adaptive-lighting option chip when present |
 
 - *Why:* separating availability from on/off (the current code half-conflates them) and promoting sensors to a first-class layer makes "device state" mean the same thing for every category. The per-category table is the contract the specs and the refit widgets are checked against.
 - *Alternative considered:* a flat enum (`on / off / unavailable / pending`). Rejected — it cannot express "available, off, but still reporting PM2.5," which is exactly the air-purifier case the current UI gets wrong.
 
 ### 2. `ControlCard` — the single card anatomy
-Add `lib/shared/widgets/control_card.dart`: a widget composing the existing `GlassCard` with a fixed header layout — `leading` icon, `title`, an optional live `status` line, and a `trailing` slot (the power toggle by default) — over an optional `body` (the detailed controls). It renders layers 1–4 of the state model: availability→dim+disable, on→glow / off→muted, the sensor `ReadingPill`s, and the control-surface body. Individual widgets stop hand-rolling glow/dim. AC, fan, purifier, and light controls all become "a `ControlCard` with a category-specific body (layer 5)."
+Add `lib/shared/widgets/control_card.dart`: a widget composing the existing `GlassCard` with a fixed header layout — `leading` icon, `title`, an optional live `status` line, and a `trailing` slot (the power toggle by default) — over an optional `body` (the detailed controls). It renders layers 1–4 of the state model: availability→dim+disable, the on/off treatment, the sensor `ReadingPill`s, and the control-surface body. Individual widgets stop hand-rolling glow/dim. AC, fan, purifier, and light controls all become "a `ControlCard` with a category-specific body (layer 5)."
+
+The header is one compact, visually quiet row; arc-gauge bodies (the AC ring, the fan dial) keep visual primacy — the card frames the instrument rather than competing with it.
+
+**Rationed glow (D10):** the radial glow renders only where colour carries information. Lights glow in their `hs_color` (existing behaviour); climate glows in a hue derived from the active HVAC mode (cool → cold, heat → warm); fan and purifier cards signal "on" through the accent treatment (accent icon, lit arc, selected mode chip) with **no** radial glow. Glow means "this device is putting something coloured into the room" — four identical amber blooms would dilute the signature into noise.
 
 - *Why:* the air-purifier widget and light tiles already have a header; the AC and fan have none. A shared header is the cheapest way to make them read as one family and removes per-widget glow/dim wiring.
 - *Alternative considered:* a `ThemeExtension`-only approach (style primitives, leave layouts alone). Rejected — it would harmonise colours but not the structural inconsistency (missing headers, no power affordance), which is the bigger problem.
@@ -67,14 +71,15 @@ Add a value object resolved by a single `switch (device.role)`, e.g. `DeviceCont
   - **light / fan** → `toggle` (turn_on / turn_off); fan on with no remembered percentage uses HA default.
   - **air purifier** → toggle the `power` switch entity; mode/readings untouched.
   - **climate** → off = `set_hvac_mode: off`; on = `set_hvac_mode: cool` (the canonical power-on mode; the detailed card's mode selector lets the user pick another mode afterwards).
+- *Status-line grammar (D13 — words are part of the language):* `Unavailable` when unavailable; `Off` when off; otherwise `<primary value> · <secondary>` — AC `24.5° · Cool`, fan `75%`, purifier `Auto · PM2.5 8`, lights `2 on` (or `On` for the group). Mode labels come from one shared formatter; no widget words its own state.
 - *Alternative considered:* a polymorphic `DeviceController` class hierarchy. Rejected as heavier than needed for four roles; a descriptor + switch is idiomatic Dart and easy to read.
 
 ### 4. Power affordance: one component, two placements
-Add `PowerToggle` — a single styled on/off control (pill/switch) used in the `ControlCard` trailing slot for detailed cards. The room **quick-controls strip** renders compact `QuickControlTile`s where the *whole tile* is the toggle (tap = power, glow = on) and a trailing chevron/long-press opens the detailed control. Both paths call the descriptor's `togglePower`.
+Add `PowerToggle` — a circular glass power-glyph button (`offMuted` glyph on the glass fill when off, `onAccent` fill when on, hit target ≥ 48 dp) used in the `ControlCard` trailing slot for detailed cards. It is deliberately **not** a restyled Material `Switch` — the purifier's stock `Switch` is exactly the vocabulary this change removes (D11). The room **quick-controls strip** renders compact `QuickControlTile`s where the *whole tile* is the toggle (tap = power; on-state follows the rationed-glow rule — light/climate tiles glow, fan/purifier tiles use the accent treatment) and a trailing chevron/long-press opens the detailed control. Both paths call the descriptor's `togglePower`.
 
 - *Why:* unifies today's split between tap-the-card (lights) and Material `Switch` (purifier) into one rule — *tiles toggle by tap, detailed cards toggle via the header `PowerToggle`* — while keeping detailed cards self-sufficient (you can power on/off without leaving them).
 - *Relationship to existing section nav:* concept sections (Climate & Air / Lights / Media) stay as the **detailed** grouping; the quick-controls strip is the new **at-a-glance + one-tap** layer. Section status lines now read from the same descriptor.
-- *Placement:* on **wide** layouts the quick controls **augment the sidebar** — they render as a per-device quick-controls block within the existing sidebar (alongside, not replacing, the bookmark nav and its status lines), so each device gets a one-tap toggle without losing section navigation. On **compact** layouts they render as a horizontal strip above the section content.
+- *Placement:* on **wide** layouts the quick controls **augment the sidebar** — they render as a per-device quick-controls block within the existing sidebar (alongside, not replacing, the bookmark nav and its status lines), so each device gets a one-tap toggle without losing section navigation. On **compact** layouts they render as a horizontal strip above the section selector (a section-independent layer that stays put as the user switches sections).
 
 ### 5. Chips: theme once, two semantic widgets
 Set a `ChipThemeData` in `app_theme.dart` so all chips share styling. Add `ModeSelector` (wraps `ChoiceChip`s for mutually-exclusive choices — HVAC mode, purifier mode) and `OptionChip` (independent binary — adaptive lighting, fan oscillation).
@@ -89,7 +94,7 @@ Extract one arc painter (270° sweep, shared stroke width, caps, gradient) behin
 
 ### 7. `ReadingPill` + a generic severity model
 Generalise `EnvReading` into a `ReadingPill` (icon + value, optional severity colour). Severity is a **generic, reading-agnostic** model, not tied to environment sensors or to the room device categories: a `ReadingSpec` carries an optional `severity` mapping (a threshold→level function) that resolves any numeric reading to one of three levels. The three-step scale lives in `AppTokens` as `severityNominal / severityWarning / severityCritical`, and any reading anywhere in the app can opt in:
-- PM2.5 — keeps its WHO thresholds (good / elevated / high).
+- PM2.5 — keeps its WHO thresholds (nominal / warning / critical).
 - Battery level — low / critical.
 - Temperatures — critical-high / critical-low (e.g. an appliance or machine overheating).
 - Filter life, machine-health / diagnostic indicators, etc.
@@ -99,7 +104,17 @@ Direction (rising-bad vs. falling-bad, e.g. PM2.5 vs. battery) is part of the pe
 - *Why:* today only PM2.5 is colour-coded and the colours are inline literals. A generic three-level model with shared tokens makes "nominal / warning / critical" one coherent signal usable for environment, power, and machine-health readings alike — including outside the room screen (e.g. the maintenance panel).
 
 ### 8. New tokens
-Extend `AppTokens` with the severity triple (`severityNominal / severityWarning / severityCritical`) and any chip/toggle accents not already derivable from the `ColorScheme`. Existing `onAccent` / `offMuted` remain the on/off foreground pair.
+Extend `AppTokens` with the severity triple (`severityNominal / severityWarning / severityCritical`) and any chip/toggle accents not already derivable from the `ColorScheme`. Existing `onAccent` / `offMuted` remain the on/off foreground pair. Severity hues must stay distinguishable from the amber `onAccent` (#FFD27D) — an amber warning next to amber on-state icons would be unreadable — so warning reads orange, nominal a desaturated green, critical red (D12).
+
+### 9. One glass recipe and token-only accents, app-wide (D17)
+The background engine already renders behind every tab (`app_shell.dart` paints `AppBackground` under the `IndexedStack`; the room screen re-renders it with its ambient tint), so background cohesion holds today. The remaining drift is in surfaces and accents, and this change closes it:
+
+- **One glass recipe:** every blurred translucent surface derives blur sigma, fill, border, and radius from the shared glass tokens. The floating dock currently hand-rolls `ImageFilter.blur(24)` over its own container — it adopts the shared recipe (a `glassBlurSigma` token or a `GlassCard` variant), so cards and dock read as one material.
+- **Token-only accents:** feature widgets must not hard-code colour literals. The scene-launch confirm glow (`0xFF66BB6A`) resolves to a theme token (the severity/nominal green) instead.
+- **Shared selector treatment:** mutually-exclusive selectors outside the room screen — the dashboard config selector, the compact section selector — derive their selected/unselected styling from the same shared treatment as `ModeSelector`, so selection reads identically everywhere.
+
+- *Why:* shipping a "unified" control language while the dock uses a different blur and the home screen hard-codes a green would leave visible exceptions on the two most-seen surfaces.
+- *Scope guard:* conformance only — no non-room screen changes layout, and the media mini-player's control anatomy stays out of scope (no new device domains).
 
 ## Risks / Trade-offs
 

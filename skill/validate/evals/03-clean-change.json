@@ -1,0 +1,11 @@
+{
+  "skills": ["validate"],
+  "query": "Validate the change 'unified-control-scheme'",
+  "setup": "Use a change previously audited as coherent (all known findings fixed), with its artifacts unmodified.",
+  "expected_behavior": [
+    "Gives an explicit verdict of 'Ready to implement' or 'Ready with minors' - never silence in place of a verdict",
+    "Invents no findings: anything reported must cite a source or quote both sides of a real disagreement",
+    "Closes with one line per check (1-3) stating what was examined and that it came back clean",
+    "Lists the best-practice sources used per domain, drawn from the local-source sweep and the endorsed source registry"
+  ]
+}
