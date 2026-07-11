@@ -55,6 +55,7 @@ migrate_working_dir/
 .kimi/
 .qwen/
 .roocode/
+.codex/
 
 # GitHub Copilot agent tooling
 .github/prompts/
