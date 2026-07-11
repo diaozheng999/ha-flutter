@@ -1,4 +1,4 @@
-schema: spec-driven
+schema: spec-driven-decisions
 
 context: |
   Tech stack: Flutter/Dart
@@ -11,3 +11,7 @@ context: |
 rules:
   specs:
     - Use Given/When/Then format for scenarios
+  decisions:
+    - Append an entry the moment a decision is made; never batch at the end
+    - Every entry needs a Why and at least one Alternative considered
+    - Supersede with a new dated entry; never edit or delete past entries

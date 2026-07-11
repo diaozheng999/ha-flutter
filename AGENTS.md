@@ -8,13 +8,26 @@ iOS and macOS platform directories are present but builds require Xcode on a Mac
 All commits must follow this format:
 
 ```
-type: concise description (claude-code, sonnet-4.6)
+type: concise description (<tool>, <model>)
 ```
 
 **Types:** `feat` | `fix` | `refactor` | `docs` | `test` | `chore` | `build` | `ci`
 
 Keep the description short and imperative (e.g. "add login screen", not "added login screen").
-The trailer `(claude-code, sonnet-4.6)` identifies the tool and model used; update the model name to match the actual model if different.
+
+The trailer `(<tool>, <model>)` identifies the agent tool and model that produced the commit.
+**Update BOTH the tool and the model to match what actually produced the commit** — the placeholder
+`(claude-code, sonnet-4.6)` is an example only, not a default. Known values:
+
+| Tool         | Example models                       |
+|--------------|--------------------------------------|
+| `claude-code`| `sonnet-4.6`, `opus-4.2`             |
+| `zcode`      | `glm-5.2`, `glm-4.6`                 |
+| `codex`      | `gpt-5`, `o4`                        |
+| `cursor`     | `cursor-small`, `cursor-fast`        |
+
+If you're unsure of your tool/model, infer from the environment or runtime metadata; do not default
+to the example. The historical commits used `(claude-code, sonnet-4.6)` and should not be retroactively edited.
 
 ## Development Setup
 
