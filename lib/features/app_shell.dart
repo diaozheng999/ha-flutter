@@ -116,7 +116,10 @@ class _FloatingDock extends StatelessWidget {
         child: ClipRRect(
           borderRadius: radius,
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+            filter: ImageFilter.blur(
+              sigmaX: tokens.glassBlurSigma,
+              sigmaY: tokens.glassBlurSigma,
+            ),
             child: Container(
               width: dockWidth,
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),

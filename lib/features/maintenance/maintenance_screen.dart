@@ -56,7 +56,7 @@ class _UpdatesBadge extends ConsumerWidget {
         children: [
           Icon(
             upToDate ? Icons.check_circle_outline : Icons.system_update,
-            color: upToDate ? const Color(0xFF66BB6A) : tokens.onAccent,
+            color: upToDate ? tokens.severityNominal : tokens.onAccent,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -66,7 +66,7 @@ class _UpdatesBadge extends ConsumerWidget {
                   : '$count update${count > 1 ? 's' : ''} available',
               style: TextStyle(
                 fontWeight: FontWeight.w600,
-                color: upToDate ? const Color(0xFF66BB6A) : null,
+                color: upToDate ? tokens.severityNominal : null,
               ),
             ),
           ),

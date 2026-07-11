@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ha_flutter/config/ha_entities.dart';
 import 'package:ha_flutter/features/room/room_sections.dart';
 import 'package:ha_flutter/features/room/widgets/room_alert_strip.dart';
+import 'package:ha_flutter/features/room/widgets/room_quick_controls.dart';
 import 'package:ha_flutter/ha/ha_providers.dart';
 import 'package:ha_flutter/shared/theme/app_theme.dart';
 import 'package:ha_flutter/shared/util/mdi_resolver.dart';
@@ -61,6 +62,10 @@ class RoomSidebar extends ConsumerWidget {
         ),
         const SizedBox(height: 12),
         RoomAlertStrip(roomId: room.id),
+        if (room.quickControlDevices.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          RoomQuickControls(room: room, onOpen: onSelect),
+        ],
         const SizedBox(height: 12),
         if (sections.length > 1)
           GlassCard(

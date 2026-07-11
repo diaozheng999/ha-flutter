@@ -76,10 +76,10 @@ class _AlarmChipState extends ConsumerState<_AlarmChip>
     final state = ref.watch(entityStateProvider(HaEntities.alarm)).valueOrNull;
     final value = state?.state ?? 'unknown';
     final (label, color, triggered) = switch (value) {
-      'disarmed' => ('Disarmed', const Color(0xFF66BB6A), false),
-      'armed_home' => ('Armed Home', const Color(0xFFFFB300), false),
-      'armed_away' => ('Armed Away', const Color(0xFFEF5350), false),
-      'triggered' => ('Triggered', const Color(0xFFEF5350), true),
+      'disarmed' => ('Disarmed', context.tokens.severityNominal, false),
+      'armed_home' => ('Armed Home', context.tokens.severityWarning, false),
+      'armed_away' => ('Armed Away', context.tokens.severityCritical, false),
+      'triggered' => ('Triggered', context.tokens.severityCritical, true),
       _ => ('Unknown', context.tokens.offMuted, false),
     };
 

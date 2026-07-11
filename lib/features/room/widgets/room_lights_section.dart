@@ -9,6 +9,7 @@ import 'package:ha_flutter/shared/widgets/color_temperature_slider.dart';
 import 'package:ha_flutter/shared/widgets/glass_card.dart';
 import 'package:ha_flutter/shared/widgets/light_tile.dart';
 import 'package:ha_flutter/shared/widgets/light_toggle_widget.dart';
+import 'package:ha_flutter/shared/widgets/selection_chips.dart';
 
 /// Lights & Ambiance section: group toggle, width-capped group sliders, an
 /// adaptive-lighting chip, and the individual lights — an always-visible tile
@@ -39,7 +40,10 @@ class _RoomLightsSectionState extends ConsumerState<RoomLightsSection> {
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: kControlMaxWidth),
             child: LightToggleWidget(
-                entityId: group, name: 'All ${room.name} lights'),
+              entityId: group,
+              name: 'All ${room.name} lights',
+              individualLights: individuals,
+            ),
           ),
           const SizedBox(height: 8),
           ConstrainedBox(
@@ -112,11 +116,11 @@ class _AdaptiveLightingChip extends ConsumerWidget {
     final isOn = state.isOn;
     final service = ref.read(haServiceProvider);
 
-    return FilterChip(
-      avatar: Icon(MdiIcons.themeLightDark, size: 18),
-      label: const Text('Adaptive lighting'),
+    return OptionChip(
+      icon: MdiIcons.themeLightDark,
+      label: 'Adaptive lighting',
       selected: isOn,
-      onSelected: (_) =>
+      onToggle: (_) =>
           isOn ? service.turnOff(entityId) : service.turnOn(entityId),
     );
   }

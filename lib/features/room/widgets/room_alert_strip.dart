@@ -27,7 +27,7 @@ class RoomAlertStrip extends ConsumerWidget {
             Row(
               children: [
                 Icon(_icon(alert.severity),
-                    size: 20, color: _color(alert.severity)),
+                    size: 20, color: _color(alert.severity, tokens)),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
@@ -66,11 +66,12 @@ class RoomAlertStrip extends ConsumerWidget {
         RoomAlertSeverity.battery => MdiIcons.batteryAlertVariantOutline,
       };
 
-  Color _color(RoomAlertSeverity s) => switch (s) {
-        RoomAlertSeverity.safety => const Color(0xFFEF5350),
+  Color _color(RoomAlertSeverity s, AppTokens tokens) => switch (s) {
+        RoomAlertSeverity.safety => tokens.severityCritical,
+        // Informational blue — no severity token maps to it.
         RoomAlertSeverity.activity => const Color(0xFF64B5F6),
-        RoomAlertSeverity.offline => const Color(0x8AFFFFFF),
-        RoomAlertSeverity.maintenance => const Color(0xFFFFB300),
-        RoomAlertSeverity.battery => const Color(0xFFFFA726),
+        RoomAlertSeverity.offline => tokens.offMuted,
+        RoomAlertSeverity.maintenance => tokens.severityWarning,
+        RoomAlertSeverity.battery => tokens.severityWarning,
       };
 }

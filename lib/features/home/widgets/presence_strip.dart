@@ -33,9 +33,9 @@ class _PersonDot extends ConsumerWidget {
     final value =
         ref.watch(entityStateProvider(entityId)).valueOrNull?.state ?? 'unknown';
     final (label, dot) = switch (value) {
-      'home' => ('Home', const Color(0xFF66BB6A)),
+      'home' => ('Home', tokens.severityNominal),
       'not_home' => ('Away', const Color(0xFF78909C)),
-      _ => ('Unknown', const Color(0xFFFFB300)),
+      _ => ('Unknown', tokens.severityWarning),
     };
 
     return Tooltip(

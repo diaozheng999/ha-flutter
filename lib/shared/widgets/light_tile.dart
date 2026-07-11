@@ -66,7 +66,12 @@ class _LightTileState extends ConsumerState<LightTile> {
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
         onTap: unavailable
             ? null
-            : () => ref.read(haServiceProvider).toggle(widget.entityId),
+            : () {
+                final service = ref.read(haServiceProvider);
+                isOn
+                    ? service.turnOff(widget.entityId)
+                    : service.turnOn(widget.entityId);
+              },
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
