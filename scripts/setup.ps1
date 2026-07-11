@@ -77,4 +77,4 @@ Write-Host "`n[5/5] Checking Flutter environment..." -ForegroundColor Yellow
 flutter doctor
 
 Write-Host "`nSetup complete." -ForegroundColor Green
-Write-Host "Restart Claude Code to pick up the new /opsx:* slash commands." -ForegroundColor Cyan
+Write-Host "Restart your agent (e.g. Claude Code) or IDE to pick up the new /opsx:* slash commands." -ForegroundColor Cyan

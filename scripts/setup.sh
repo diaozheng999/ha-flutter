@@ -61,4 +61,4 @@ flutter doctor
 
 echo ""
 echo "Setup complete."
-echo "Restart Claude Code to pick up the new /opsx:* slash commands."
+echo "Restart your agent (e.g. Claude Code) or IDE to pick up the new /opsx:* slash commands."
