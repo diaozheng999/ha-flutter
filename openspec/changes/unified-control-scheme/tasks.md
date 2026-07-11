@@ -45,7 +45,7 @@
 ## 7. Cleanup & verification
 
 - [ ] 7.1 Remove dead code: per-widget glow/dim/status wiring, duplicated `_RingPainter`/`_DialPainter`, purifier `Switch` remnants
-- [ ] 7.2 Sweep `lib/features/` for remaining hard-coded accent colour literals; migrate to tokens
+- [ ] 7.2 Sweep `lib/` for remaining hard-coded accent colour literals and migrate to tokens. The confirm-green `0xFF66BB6A` is the `severityNominal` token and currently recurs in `scene_launch_row.dart` (lines 69, 76), `maintenance_screen.dart` (59, 69), `security_screen.dart` (79), `presence_strip.dart` (36), and `env_reading.dart` (64 — also covered by 5.2); map every occurrence to the token
 - [ ] 7.3 Run `flutter analyze` and the test suite; fix regressions
 - [ ] 7.4 Verify home, security, scenes, and maintenance screens still build and render (shared-widget API compatibility risk from design)
 - [ ] 7.5 Verify the room screen end-to-end at compact (< 840 dp) and wide (≥ 840 dp) breakpoints on Windows: quick toggles, refit controls, status lines, glow behaviour

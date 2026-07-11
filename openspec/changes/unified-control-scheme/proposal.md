@@ -6,9 +6,9 @@ This change defines a single control scheme and design language — one card ana
 
 ## What Changes
 
-- **Establish a shared control design language**: a single "control card" anatomy (icon + name + live status + on/off affordance in a consistent header, detailed controls in the body), unified device state semantics (on / off / unavailable / pending, expressed consistently via glow, dim, and the pending overlay), and shared interaction primitives — one toggle style, one chip style (mode selection vs. binary option), one slider style, one dial style — all reading from shared design tokens.
+- **Establish a shared control design language**: a single "control card" anatomy (icon + name + live status + on/off affordance in a consistent header, detailed controls in the body), unified device state semantics (a layered availability / power / sensor model, expressed consistently via glow, dim, reading pills, and the pending overlay), and shared interaction primitives — one toggle style, one chip style (mode selection vs. binary option), one slider style, one dial style — all reading from shared design tokens.
 - **Introduce a unified quick-toggle control** usable by any on/off-capable device domain (light, fan, AC, air purifier), plus a room-level quick-controls row that surfaces every device's on/off + one-line status at a glance, before the user drills into detailed controls.
-- **Define a coherent environment-label vocabulary**: a consistent reading/status pill with a shared severity colour scale (good / elevated / high), generalising the PM2.5-only colour coding to other readings and unifying how room state is summarised.
+- **Define a coherent environment-label vocabulary**: a consistent reading/status pill with a shared severity colour scale (nominal / warning / critical), generalising the PM2.5-only colour coding to other readings and unifying how room state is summarised.
 - **Refit the existing detailed controls to the new language** (concrete changes to the current room implementation):
   - **Air conditioning** — wrap the thermostat ring + step buttons + mode selector in the shared card header with a quick on/off; align mode chips to the shared chip style.
   - **Fan** — give the speed dial the shared header with a quick on/off and live status; align with the shared dial style.

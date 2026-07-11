@@ -79,7 +79,7 @@ Add `PowerToggle` — a circular glass power-glyph button (`offMuted` glyph on t
 
 - *Why:* unifies today's split between tap-the-card (lights) and Material `Switch` (purifier) into one rule — *tiles toggle by tap, detailed cards toggle via the header `PowerToggle`* — while keeping detailed cards self-sufficient (you can power on/off without leaving them).
 - *Relationship to existing section nav:* concept sections (Climate & Air / Lights / Media) stay as the **detailed** grouping; the quick-controls strip is the new **at-a-glance + one-tap** layer. Section status lines now read from the same descriptor.
-- *Placement:* on **wide** layouts the quick controls **augment the sidebar** — they render as a per-device quick-controls block within the existing sidebar (alongside, not replacing, the bookmark nav and its status lines), so each device gets a one-tap toggle without losing section navigation. On **compact** layouts they render as a horizontal strip above the section content.
+- *Placement:* on **wide** layouts the quick controls **augment the sidebar** — they render as a per-device quick-controls block within the existing sidebar (alongside, not replacing, the bookmark nav and its status lines), so each device gets a one-tap toggle without losing section navigation. On **compact** layouts they render as a horizontal strip above the section selector (a section-independent layer that stays put as the user switches sections).
 
 ### 5. Chips: theme once, two semantic widgets
 Set a `ChipThemeData` in `app_theme.dart` so all chips share styling. Add `ModeSelector` (wraps `ChoiceChip`s for mutually-exclusive choices — HVAC mode, purifier mode) and `OptionChip` (independent binary — adaptive lighting, fan oscillation).
@@ -94,7 +94,7 @@ Extract one arc painter (270° sweep, shared stroke width, caps, gradient) behin
 
 ### 7. `ReadingPill` + a generic severity model
 Generalise `EnvReading` into a `ReadingPill` (icon + value, optional severity colour). Severity is a **generic, reading-agnostic** model, not tied to environment sensors or to the room device categories: a `ReadingSpec` carries an optional `severity` mapping (a threshold→level function) that resolves any numeric reading to one of three levels. The three-step scale lives in `AppTokens` as `severityNominal / severityWarning / severityCritical`, and any reading anywhere in the app can opt in:
-- PM2.5 — keeps its WHO thresholds (good / elevated / high).
+- PM2.5 — keeps its WHO thresholds (nominal / warning / critical).
 - Battery level — low / critical.
 - Temperatures — critical-high / critical-low (e.g. an appliance or machine overheating).
 - Filter life, machine-health / diagnostic indicators, etc.

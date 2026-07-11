@@ -153,3 +153,11 @@
 - **Alternatives considered:** Doing dock/scene/selector conformance first was rejected because the blur token and selector treatment do not exist yet; a single trailing test task was rejected as too late to catch descriptor mistakes.
 - **Status:** Decided
 - **Handoff note:** Implement groups in order; within group 3, one device per session is a natural checkpoint.
+
+### D19 - Resolve validation findings from the coherence audit (2026-07-11)
+
+- **Decision:** Applied the audit's fixes: (1) the compact quick-controls strip renders **above the section selector**, not "above the section content" — design.md is corrected to match the spec and tasks, because the strip is a section-independent at-a-glance layer that must stay put as sections switch; (2) added a `Glassmorphic card surface` MODIFIED delta to `device-controls` that re-expresses blur/fill/border/radius as the shared glass tokens (values retained), so after archive it no longer contradicts the new `Single glass surface recipe` requirement; (3) purged the pre-D12 "good / elevated / high" wording and the pre-D2 flat state enum from proposal.md and design.md; (4) enumerated the verified `0xFF66BB6A` occurrences in task 7.2 for retrievable context.
+- **Why:** A `/validate` audit flagged one design↔spec contradiction (S1) and several stale-vocabulary and cross-spec-consistency nits; resolving them keeps every artifact telling the same story before implementation.
+- **Alternatives considered:** Superseding the strip-placement contradiction with a new decision that picked "above the section content" was rejected — the selector-adjacent placement is the better UX and the spec/tasks already committed to it, so aligning design.md is the smaller, correct move. Leaving the glass-surface contradiction for archive-time was rejected because it would ship two specs mandating different blur handling.
+- **Status:** Implemented
+- **Handoff note:** The strip-placement wording is now consistent across design/spec/tasks; the glass-surface delta means task 1.2's blur token also satisfies the `device-controls` surface requirement.

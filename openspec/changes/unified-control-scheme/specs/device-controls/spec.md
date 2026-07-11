@@ -74,6 +74,21 @@ The app SHALL provide a `LightTile` widget: a compact glassmorphic tile sized fo
 - **WHEN** the tile's entity state is `unavailable`
 - **THEN** the tile SHALL render at 40% opacity with toggle and slider non-interactive
 
+### Requirement: Glassmorphic card surface
+All control cards SHALL use a consistent glassmorphic surface defined by the shared glass tokens in `AppTokens`: the shared glass blur sigma (currently 20), the `glassFill` colour (`Color(0x18FFFFFF)`), a 1 px `glassBorder` (`Color(0x30FFFFFF)`), and the shared `cardRadius` (20 px). No widget SHALL hard-code these values independently; they SHALL be applied uniformly by a shared `GlassCard` widget that wraps any child.
+
+#### Scenario: Glass card blurs background
+- **WHEN** a `GlassCard` is rendered over the animated sky background
+- **THEN** the card content area SHALL visually blur the background behind it
+
+#### Scenario: On-state glow
+- **WHEN** a device entity is `on` and a glow colour is provided to `GlassCard`
+- **THEN** the card SHALL render a `BoxShadow` with the given colour at blur 24 px and opacity 0.45
+
+#### Scenario: Blur derives from the shared token
+- **WHEN** any glass surface (control card or the floating dock) renders its backdrop blur
+- **THEN** its blur sigma SHALL come from the shared glass token, not a widget-local literal
+
 ## ADDED Requirements
 
 ### Requirement: Air purifier control card
