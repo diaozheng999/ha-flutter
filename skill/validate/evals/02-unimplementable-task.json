@@ -1,0 +1,11 @@
+{
+  "skills": ["validate"],
+  "query": "Validate the change 'seeded-fixture'",
+  "setup": "Copy an existing coherent OpenSpec change to openspec/changes/seeded-fixture/. Append a task '- [ ] 9.1 Improve the dashboard UX' to tasks.md: no spec requirement or logged decision backs it, and it has no verifiable done-condition.",
+  "expected_behavior": [
+    "Reports the seeded task as severity Major, citing the specific Check 2 bullets it fails (no done-condition; not traceable to a requirement or decision)",
+    "Locates the finding at tasks.md with the task number",
+    "Does not escalate it to Blocker (information is not contradictory, merely absent) and does not downgrade it to Minor",
+    "Verdict line counts the major"
+  ]
+}

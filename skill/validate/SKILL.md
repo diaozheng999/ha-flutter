@@ -24,7 +24,7 @@ One change = one coherent intent. Verify:
 
 ## Check 2: Task implementability — the mid-level test
 
-Calibrate against a competent **mid-level coding model** (Sonnet / GPT-5.4 / DeepSeek class): reliable at local edits and following explicit instructions; unreliable at inferring unstated intent, holding cross-file invariants, or recovering from ambiguous references. For **each task** ask:
+Calibrate against a competent **mid-level implementer**, defined by capability, not by model name: reliable at local edits and following explicit instructions; unreliable at inferring unstated intent, holding cross-file invariants, or recovering from ambiguous references. (Dated examples as of 2026: Sonnet-, GPT-5.4-, DeepSeek-class models.) For **each task** ask:
 
 - **Retrievable context**: at implementation time, can everything the task needs be retrieved from the artifacts plus the repo — file paths, symbol names, expected behaviour, target values? A task that depends on conversation history, tribal knowledge, or "see discussion" fails this check.
 - **Right size**: completable in one focused session; touches a bounded, predictable set of files; does not mix unrelated concerns.
@@ -38,7 +38,11 @@ Identify the domain(s) the change touches (UI/design system, Flutter/Dart, API d
 
 1. **Project-local sources — discover, don't assume a fixed list.** The repo accumulates its own authority as it matures; sweep for it every run rather than relying on what existed last time. Look at least in: `CLAUDE.md`/`AGENTS.md`; `openspec/config.yaml`; the main specs under `openspec/specs/` (established requirements are settled conventions); decision logs of the current *and archived* changes under `openspec/changes/` (prior decisions bind later changes unless explicitly superseded); project skills (`skill/`, plus installed ones like `flutter-*`, `home-assistant-best-practices`, `frontend-design`); lint/analysis configs; and any `docs/`, ADRs, or style guides that have appeared. Also treat consistently-established code patterns (e.g. an existing shared widget or token system the change should extend rather than bypass) as a local source — cite the file that establishes the pattern.
 2. Official documentation of the technology (e.g. Effective Dart, Material 3 guidelines).
-3. A source the user has previously endorsed in this repo.
+3. A source the user has previously endorsed in this repo — check the registry below.
+
+**Endorsed source registry** (append here when the user endorses a source; this is where "previously endorsed" sources live):
+
+- Skill authoring: https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices (endorsed 2026-07-11)
 
 When local and external sources conflict, the local source wins — the project has already made its choice; flag the conflict itself only as Info unless the change deepens it.
 
