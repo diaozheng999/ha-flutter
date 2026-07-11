@@ -1,4 +1,4 @@
-schema: spec-driven
+schema: spec-driven-decisions
 
 context: |
   Tech stack: Flutter/Dart
@@ -9,5 +9,16 @@ context: |
   Architecture: TBD
 
 rules:
+  proposal:
+    - Grill before you write - unless the idea was already grilled in explore mode, run the grilling skill (/grill-me) and stress-test why/what/scope one question at a time before drafting
   specs:
     - Use Given/When/Then format for scenarios
+    - Log requirement-level decisions in decisions.md as they arise
+  design:
+    - Every decision in design.md must already have a dated entry in decisions.md
+  tasks:
+    - Log sequencing and scoping decisions in decisions.md as they arise
+  decisions:
+    - Append an entry the moment a decision is made; never batch at the end
+    - Every entry needs a Why and at least one Alternative considered
+    - Supersede with a new dated entry; never edit or delete past entries

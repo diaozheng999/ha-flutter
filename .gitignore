@@ -56,6 +56,7 @@ migrate_working_dir/
 .qwen/
 .roocode/
 .codex/
+.zcode/
 
 # GitHub Copilot agent tooling
 .github/prompts/
