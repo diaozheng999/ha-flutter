@@ -52,6 +52,12 @@ Write-Host "`n[4/7] Initialising OpenSpec..." -ForegroundColor Yellow
 if ($Tools -eq "none") {
     Write-Host "  (skipped - Tools=none)" -ForegroundColor DarkGray
 } else {
+    $hasBridge = @(
+        Get-ChildItem -Path (Join-Path $Root ".agents\skills") -Directory -Filter "opsx-*" -ErrorAction SilentlyContinue
+    ).Count -gt 0
+    if (-not $Tools -and $hasBridge) {
+        Write-Host "  (skipped - existing universal opsx skills preserve project configuration)" -ForegroundColor DarkGray
+    } else {
     if (-not $Tools) {
         $EffectiveTools = "claude"
     } elseif ($Tools -eq "all") {
@@ -66,6 +72,7 @@ if ($Tools -eq "none") {
         npx openspec init --tools $EffectiveTools
     } finally {
         Pop-Location
+    }
     }
 }
 

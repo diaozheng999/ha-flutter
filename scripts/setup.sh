@@ -39,6 +39,8 @@ echo ""
 echo "[4/7] Initialising OpenSpec..."
 if [ "$TOOLS" = "none" ]; then
     echo "  (skipped — tools=none)"
+elif [ -z "$TOOLS" ] && compgen -G "$ROOT/.agents/skills/opsx-*" > /dev/null; then
+    echo "  (skipped - existing universal opsx skills preserve project configuration)"
 else
     case ",$TOOLS," in
         ,,|*,claude,*) EFFECTIVE_TOOLS="${TOOLS:-claude}" ;;

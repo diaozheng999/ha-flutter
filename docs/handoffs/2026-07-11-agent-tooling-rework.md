@@ -6,6 +6,27 @@
 DONE (uncommitted). AGENTS.md rewrite + end-to-end verify + commit PENDING.
 **Branch:** `feat/agent-tooling-rework` (checked out)
 
+> **Session 3 completion note:** The outstanding documentation and explore-mode
+> reinforcement are now complete. `AGENTS.md` documents the global OpenSpec
+> CLI, lockfile restore, universal `opsx-*` bridge, decision-log discipline,
+> grilling, and schema customisation. The bridge injects the exploration
+> guidance into generated `opsx-explore` skills. Setup now preserves the
+> project configuration on a default re-run when bridged skills already exist.
+> `unified-control-scheme` was also migrated to `spec-driven-decisions` at the
+> user's request; its decisions.md seeds the decisions already made in design.
+> Validation passed for the schema, PowerShell parsing, Node parsing, and the
+> migrated change status. The generated-skill rewrite could not be exercised in
+> this session because the live agent runtime locked `.agents/skills/opsx-explore/SKILL.md`.
+
+## Session 3: current state
+
+- Tooling source changes awaiting commit: `AGENTS.md`, both setup scripts, and
+  `scripts/generate-opsx-skills.mjs`.
+- OpenSpec migration awaiting commit: `unified-control-scheme/.openspec.yaml`
+  and `unified-control-scheme/decisions.md`.
+- The next OpenSpec artifact for the migrated change is `specs`; tasks remain
+  correctly blocked on specs.
+
 > **Session 2 note:** The approach shifted from the original plan. The
 > `/opsx:*` → `/opsx-*` rename is now done by a dedicated, committed,
 > idempotent Node script (`scripts/generate-opsx-skills.mjs`) rather than

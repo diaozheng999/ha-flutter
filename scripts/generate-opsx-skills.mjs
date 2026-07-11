@@ -48,7 +48,24 @@ function convert(commandFile) {
   let description =
     frontmatterValue(parts[1], 'description') ?? `OpenSpec workflow: ${id}`;
   if (!/[.!?]$/.test(description)) description += '.';
-  const body = parts.slice(2).join('---').replace(/opsx:/g, 'opsx-').trim();
+  let body = parts.slice(2).join('---').replace(/opsx:/g, 'opsx-').trim();
+
+  // Explore mode is freeform, so project-specific planning discipline is
+  // injected here. The proposal gate remains the hard backstop.
+  if (id === 'explore') {
+    body += `
+
+## Project planning discipline
+
+- When the user wants to stress-test a plan or design, invoke the \`grilling\`
+  skill through \`/grill-me\` before converging on a proposal. Ask one question
+  at a time, include a recommended answer, and wait for the user's response.
+- If exploration produces a decision or an important constraint for an active
+  \`spec-driven-decisions\` change, append it to that change's \`decisions.md\`
+  immediately. Include the decision, why, alternatives considered, status, and
+  a handoff note. Never batch these entries or rewrite earlier ones.
+`;
+  }
 
   const skill = `---
 name: ${skillName}
