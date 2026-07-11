@@ -7,7 +7,17 @@ artifacts:
     description: Initial proposal document outlining the change
     template: proposal.md
     instruction: >
-      Create the proposal document that establishes WHY this change is needed.
+      FIRST, stress-test the idea. Unless a grilling interview already happened
+      (during explore mode or earlier in this conversation), run the `grilling`
+      skill (invoked via /grill-me): interrogate the user relentlessly, one
+      question at a time, offering a recommended answer with each question,
+      until the why / what / scope survive scrutiny. Do not draft the proposal
+      until that shared understanding exists. Decisions that emerge from the
+      interview are raw material for decisions.md (the next artifact).
+
+
+      Then create the proposal document that establishes WHY this change is
+      needed.
 
 
       Sections:
@@ -197,8 +207,14 @@ artifacts:
 
 
       Specs should be testable - each scenario is a potential test case.
+
+
+      Log requirement-level decisions (scope cuts, deferred behavior, renamed
+      capabilities) in decisions.md the moment they are made - do not batch
+      them for later.
     requires:
       - proposal
+      - decisions
   - id: design
     generates: design.md
     description: Technical design document with implementation details
@@ -242,8 +258,14 @@ artifacts:
 
 
       Good design docs explain the "why" behind technical decisions.
+
+
+      design.md distills; decisions.md records. Every decision written here
+      MUST already have a dated entry in decisions.md - append the entry the
+      moment the choice is made, not after the design is written.
     requires:
       - proposal
+      - decisions
   - id: tasks
     generates: tasks.md
     description: Implementation checklist with trackable tasks
@@ -294,6 +316,10 @@ artifacts:
       Reference specs for what needs to be built, design for how to build it.
 
       Each task should be verifiable - you know when it's done.
+
+
+      Sequencing and scoping decisions (what to defer, what to split, what
+      order and why) belong in decisions.md as they arise.
     requires:
       - specs
       - design
@@ -303,5 +329,10 @@ apply:
     - decisions
   tracks: tasks.md
   instruction: |
-    Read context files, work through pending tasks, mark complete as you go.
+    Read decisions.md FIRST - it is the change's history and handoff record;
+    understand past decisions before touching artifacts or code.
+    Then read the remaining context files, work through pending tasks, and mark
+    them complete as you go.
+    Append a dated entry to decisions.md the moment any implementation decision
+    or deviation from the plan arises - never batch entries for the end.
     Pause if you hit blockers or need clarification.
