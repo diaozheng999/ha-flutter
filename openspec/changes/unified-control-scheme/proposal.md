@@ -15,6 +15,7 @@ This change defines a single control scheme and design language — one card ana
   - **Air purifier** — replace the bespoke `Switch`/header/chip layout with the shared card shell, quick-toggle, and shared mode-chip + reading-pill styles.
   - **Lights** — align the group toggle, sliders, adaptive-lighting affordance, and individual tiles to the shared card anatomy and chip semantics.
 - **Update the room detail screen** to present the quick-controls layer and the conformed detailed controls coherently (quick toggles available without drilling in; the air purifier promoted to a first-class conformed control rather than an ad-hoc climate tile).
+- **Enforce app-wide surface and accent consistency**: the background engine already renders behind every tab; this change closes the remaining gaps — the floating navigation dock adopts the shared glass recipe (today it hand-rolls its own blur), feature widgets stop hard-coding accent colours (the scene-launch confirm green becomes a token), and mutually-exclusive selectors outside the room screen (dashboard config selector, compact section selector) adopt the shared selector treatment. Surface/token conformance only — no layout redesign of non-room screens.
 
 No backend/HA service-call contracts change — every control still calls the same `light.*`, `fan.*`, `climate.*`, `select.*`, `switch.*` services with the same debounce behaviour. This is a presentation/interaction-coherence change.
 
@@ -34,6 +35,7 @@ No backend/HA service-call contracts change — every control still calls the sa
   - Shared widgets: `lib/shared/widgets/` — `ac_thermostat_widget.dart`, `fan_speed_dial.dart`, `air_purifier_widget.dart`, `light_tile.dart`, `light_toggle_widget.dart`, `brightness_slider.dart`, `color_temperature_slider.dart`, `glass_card.dart`, `env_reading.dart`; new shared control-card / quick-toggle widgets.
   - Theme/tokens: `lib/shared/theme/app_theme.dart` (`AppTokens`) — likely new tokens for chip/toggle/status styling and the severity scale.
   - Room feature: `lib/features/room/room_detail_screen.dart`, `lib/features/room/room_sections.dart`, and `lib/features/room/widgets/` (climate/lights/media sections, sidebar).
+  - App-wide surface conformance: `lib/features/app_shell.dart` (floating dock glass), `lib/features/home/widgets/scene_launch_row.dart` (confirm glow token), `lib/features/home/widgets/config_selector.dart` (selector treatment).
 - **No changes to:** HA service-call contracts, the data layer (`lib/ha/`), entity/room config models, or auth.
 - **Dependencies:** none added; built on the existing Flutter + Riverpod + Material 3 stack.
 - **Specs:** 1 new spec file (`control-design-language`), 3 delta specs against existing capabilities.
