@@ -163,9 +163,8 @@ the app beyond the same service calls used today.
 - **Resolver rule for mislabelling** — when two entities share a role in one
   room, or a member is reachable from two labelled units: pick-first + warn,
   or surface a user-visible config warning? (Feeds a spec scenario.)
-- **Default role taxonomy & ordering** (D17) — ship with `overhead/task/ambient`
-  as the default ordered list, or leave the default empty (everything ungrouped
-  until labelled)?
+- ~~Default role taxonomy & ordering (D17)~~ — **resolved (D18):** default
+  ordered list is `overhead / task / ambient`; rooms may override.
 - **Which entity carries the role label for switch-controlled lighting** (D16) —
   the `switch.*` entity directly, or a wrapping group? Affects the resolver's
   fixture-discovery query.

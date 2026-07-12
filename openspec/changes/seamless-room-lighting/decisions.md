@@ -262,3 +262,23 @@
 - **Handoff note:** Needs a small config surface: the ordered list of roles and
   their display (name/icon). Unknown/unlabelled roles fall back to the ungrouped
   bucket (D5). The room layout (L1) must not assume a fixed layer count.
+
+### D18 - Default role taxonomy is overhead / task / ambient (2026-07-12)
+
+- **Decision:** The configurable taxonomy (D17) ships with a **default ordered
+  list of `overhead`, `task`, `ambient`**, in that order. A room with no override
+  uses these three; a room may override the set/order via config.
+- **Why:** Matches how the user described the space and gives a predictable,
+  non-empty layout out of the box, without forcing everything into the ungrouped
+  bucket until labels are applied. Keeps the common case zero-config while
+  preserving D17's flexibility.
+- **Alternatives considered:** Default-empty (everything ungrouped until labelled)
+  was rejected — it makes an unconfigured room look broken and hides the intended
+  layer model on first run.
+- **Status:** Decided (resolves the "default role taxonomy" open question in
+  design.md).
+- **Handoff note:** Labels still drive membership (D14/D15); the default only
+  fixes which role *layers* render and their order. A default-role layer with no
+  labelled fixtures renders empty/absent rather than as an error. `role:<name>`
+  labels outside the default three are honoured (D17) and appended after them
+  unless the room overrides ordering.
