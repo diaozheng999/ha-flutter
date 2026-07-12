@@ -73,6 +73,17 @@ class RoomConfig {
         ...individualLights,
       ];
 
+  /// On/off-capable devices for the quick-controls layer: climate, fan, air
+  /// purifier, and the light group (one tile each). Media is excluded.
+  List<RoomDevice> get quickControlDevices => [
+        for (final d in devices)
+          if (d.role == DeviceRole.climate ||
+              d.role == DeviceRole.fan ||
+              d.role == DeviceRole.airPurifier ||
+              (d.role == DeviceRole.light && d.isGroup))
+            d,
+      ];
+
   /// All controllable device entity ids (for offline detection).
   List<String> get deviceEntities => [
         ...allLights,

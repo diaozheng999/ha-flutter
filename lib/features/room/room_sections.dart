@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ha_flutter/config/room_config.dart';
 import 'package:ha_flutter/ha/ha_providers.dart';
+import 'package:ha_flutter/ha/models/room_device.dart';
+import 'package:ha_flutter/shared/widgets/device_control_descriptor.dart';
 
 /// Concept sections of the room detail screen. Declaration order is the
 /// display and default-selection order.
@@ -30,51 +32,47 @@ List<RoomSection> availableSections(RoomConfig room,
   ];
 }
 
-/// Live one-line status for a section's nav item / selector chip, e.g.
-/// "2 on", "24.5° · Cool", "Playing".
-String sectionStatusLine(WidgetRef ref, RoomConfig room, RoomSection section) {
-  String? state(String id) =>
-      ref.watch(entityStateProvider(id)).valueOrNull?.state;
+/// The section a device's quick-control tile opens into.
+RoomSection sectionForDevice(RoomDevice device) => switch (device.role) {
+      DeviceRole.light => RoomSection.lights,
+      DeviceRole.mediaPlayer => RoomSection.media,
+      _ => RoomSection.climate,
+    };
 
+RoomDevice? _deviceOfRole(RoomConfig room, DeviceRole role, {bool? group}) =>
+    room.devices
+        .where((d) => d.role == role && (group == null || d.isGroup == group))
+        .firstOrNull;
+
+/// Live one-line status for a section's nav item / selector chip, sourced from
+/// the shared [DeviceControlDescriptor] so nav items and quick tiles render the
+/// same string, e.g. "2 on", "24.5° · Cool", "Playing".
+String sectionStatusLine(WidgetRef ref, RoomConfig room, RoomSection section) {
   switch (section) {
     case RoomSection.lights:
-      final onCount = room.individualLights
-          .where((id) => state(id) == 'on')
-          .length;
-      if (onCount > 0) return '$onCount on';
-      if (room.lightGroup != null && state(room.lightGroup!) == 'on') {
-        return 'On';
+      final group = _deviceOfRole(room, DeviceRole.light, group: true);
+      if (group != null) {
+        return DeviceControlDescriptor.describe(ref, group,
+                roomLights: room.individualLights)
+            .statusLine;
       }
-      return 'Off';
+      // No group entity — count individuals directly.
+      final onCount = room.individualLights
+          .where((id) =>
+              ref.watch(entityStateProvider(id)).valueOrNull?.isOn ?? false)
+          .length;
+      return onCount > 0 ? '$onCount on' : 'Off';
 
     case RoomSection.climate:
-      if (room.climate != null) {
-        final ac = ref.watch(entityStateProvider(room.climate!)).valueOrNull;
-        final mode = ac?.state;
-        if (ac == null || mode == null || mode == 'off' ||
-            mode == 'unknown' || mode == 'unavailable') {
-          return 'Off';
-        }
-        final current = ac.attrDouble('current_temperature');
-        final temp =
-            current != null ? '${current.toStringAsFixed(1)}°' : '';
-        return temp.isEmpty ? _hvacLabel(mode) : '$temp · ${_hvacLabel(mode)}';
-      }
-      final fan = ref.watch(entityStateProvider(room.fan!)).valueOrNull;
-      if (fan == null || !fan.isOn) return 'Off';
-      return '${fan.attrInt('percentage') ?? 0}%';
+      final climate = _deviceOfRole(room, DeviceRole.climate) ??
+          _deviceOfRole(room, DeviceRole.fan);
+      if (climate == null) return 'Off';
+      return DeviceControlDescriptor.describe(ref, climate).statusLine;
 
     case RoomSection.media:
-      final s = state(room.mediaPlayer!) ?? 'idle';
+      final s =
+          ref.watch(entityStateProvider(room.mediaPlayer!)).valueOrNull?.state ??
+              'idle';
       return s[0].toUpperCase() + s.substring(1);
   }
 }
-
-String _hvacLabel(String mode) => switch (mode) {
-      'cool' => 'Cool',
-      'heat' => 'Heat',
-      'fan_only' => 'Fan',
-      'dry' => 'Dry',
-      'auto' || 'heat_cool' => 'Auto',
-      _ => mode,
-    };

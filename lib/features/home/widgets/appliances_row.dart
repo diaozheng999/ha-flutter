@@ -89,7 +89,7 @@ class _ShinyCardState extends ConsumerState<_ShinyCard>
                 turns: _spin,
                 child: Icon(
                   mdiIcon(state?.icon, fallback: domainFallback('vacuum')),
-                  color: isError ? const Color(0xFFEF5350) : tokens.onAccent,
+                  color: isError ? tokens.severityCritical : tokens.onAccent,
                 ),
               ),
               const SizedBox(width: 8),
@@ -100,7 +100,7 @@ class _ShinyCardState extends ConsumerState<_ShinyCard>
           Text(
             isError ? 'Error' : _label(value),
             style: TextStyle(
-              color: isError ? const Color(0xFFEF5350) : tokens.offMuted,
+              color: isError ? tokens.severityCritical : tokens.offMuted,
             ),
           ),
           const SizedBox(height: 6),

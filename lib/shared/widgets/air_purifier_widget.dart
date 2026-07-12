@@ -2,129 +2,69 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ha_flutter/ha/ha_providers.dart';
 import 'package:ha_flutter/ha/models/room_device.dart';
-import 'package:ha_flutter/shared/theme/app_theme.dart';
+import 'package:ha_flutter/shared/widgets/control_card.dart';
+import 'package:ha_flutter/shared/widgets/device_control_descriptor.dart';
+import 'package:ha_flutter/shared/widgets/pending_overlay.dart';
+import 'package:ha_flutter/shared/widgets/power_toggle.dart';
+import 'package:ha_flutter/shared/widgets/reading_pill.dart';
+import 'package:ha_flutter/shared/widgets/selection_chips.dart';
 
-/// Control tile for a Xiaomi-style air purifier: power toggle, mode chips,
-/// live PM2.5 reading, and filter life. Entity IDs come from [RoomDevice].
+/// Air purifier rendered as a [ControlCard]: header icon, name, live status line
+/// ("Auto · PM2.5 8"), and a [PowerToggle] acting on the power `switch` entity.
+/// The body holds a mode [ModeSelector] (from the mode `select` options, disabled
+/// while off) and [ReadingPill]s for PM2.5 (WHO severity) and filter life, which
+/// stay visible while the purifier is off.
 class AirPurifierWidget extends ConsumerWidget {
   final RoomDevice device;
   const AirPurifierWidget({super.key, required this.device});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final tokens = context.tokens;
-    final service = ref.read(haServiceProvider);
-
     final powerId = device.entity('power');
     final modeId = device.entity('mode');
-    final pm25Id = device.entity('pm25');
-    final filterId = device.entity('filter');
+    final d = DeviceControlDescriptor.describe(ref, device);
 
-    final powerState = powerId != null
-        ? ref.watch(entityStateProvider(powerId)).valueOrNull
-        : null;
-    final modeState = modeId != null
-        ? ref.watch(entityStateProvider(modeId)).valueOrNull
-        : null;
-    final pm25State = pm25Id != null
-        ? ref.watch(entityStateProvider(pm25Id)).valueOrNull
-        : null;
-    final filterState = filterId != null
-        ? ref.watch(entityStateProvider(filterId)).valueOrNull
-        : null;
-
-    final isOn = powerState?.isOn ?? false;
-    final currentMode = modeState?.state;
-    final pm25 = pm25State?.state;
-    final filterPct = filterState?.state;
-
-    // Modes available from HA select options attribute.
+    final modeState =
+        modeId != null ? ref.watch(entityStateProvider(modeId)).valueOrNull : null;
     final modes = modeState?.attrList<String>('options') ??
         const ['Auto', 'Sleep', 'Favorite'];
+    final currentMode = modeState?.state;
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Header: icon + name + power toggle
-        Row(
+    final service = ref.read(haServiceProvider);
+
+    return PendingOverlay(
+      entityId: powerId ?? device.deviceId,
+      child: ControlCard(
+        icon: d.icon,
+        name: d.name,
+        status: d.statusLine,
+        isOn: d.isOn,
+        unavailable: !d.isAvailable,
+        trailing: PowerToggle(isOn: d.isOn, onTap: d.togglePower),
+        body: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(
-              Icons.air,
-              size: 20,
-              color: isOn ? tokens.onAccent : tokens.offMuted,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                device.name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                    fontSize: 14, fontWeight: FontWeight.w600),
+            if (d.sensors.isNotEmpty)
+              Wrap(
+                spacing: 16,
+                runSpacing: 8,
+                children: [for (final s in d.sensors) ReadingPill(spec: s)],
               ),
-            ),
-            if (powerId != null)
-              Switch(
-                value: isOn,
-                onChanged: (_) => isOn
-                    ? service.turnOff(powerId)
-                    : service.turnOn(powerId),
+            if (modeId != null) ...[
+              const SizedBox(height: 12),
+              ModeSelector<String>(
+                options: modes,
+                selected: currentMode,
+                labelOf: (m) => m,
+                onSelect: d.isOn
+                    ? (m) => service.call('select', 'select_option',
+                        data: {'entity_id': modeId, 'option': m})
+                    : null,
               ),
+            ],
           ],
         ),
-        const SizedBox(height: 8),
-        // PM2.5 reading
-        if (pm25 != null)
-          Row(
-            children: [
-              Icon(Icons.grain, size: 14, color: tokens.offMuted),
-              const SizedBox(width: 4),
-              Text(
-                '$pm25 μg/m³',
-                style: TextStyle(fontSize: 13, color: tokens.offMuted),
-              ),
-            ],
-          ),
-        const SizedBox(height: 8),
-        // Mode chips
-        if (modeId != null)
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: [
-              for (final mode in modes)
-                ChoiceChip(
-                  label: Text(mode),
-                  selected: mode == currentMode,
-                  onSelected: isOn
-                      ? (_) => service.call(
-                            'select',
-                            'select_option',
-                            data: {
-                              'entity_id': modeId,
-                              'option': mode,
-                            },
-                          )
-                      : null,
-                ),
-            ],
-          ),
-        // Filter life footer
-        if (filterPct != null) ...[
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Icon(Icons.filter_alt_outlined,
-                  size: 13, color: tokens.offMuted),
-              const SizedBox(width: 4),
-              Text(
-                'Filter $filterPct%',
-                style: TextStyle(fontSize: 12, color: tokens.offMuted),
-              ),
-            ],
-          ),
-        ],
-      ],
+      ),
     );
   }
 }

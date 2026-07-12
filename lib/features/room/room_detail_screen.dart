@@ -3,14 +3,15 @@ import 'package:flutter_material_design_icons/flutter_material_design_icons.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ha_flutter/config/room_config.dart';
 import 'package:ha_flutter/features/room/room_sections.dart';
-import 'package:ha_flutter/ha/room_registry_provider.dart';
 import 'package:ha_flutter/features/room/widgets/room_alert_strip.dart';
 import 'package:ha_flutter/features/room/widgets/room_climate_section.dart';
 import 'package:ha_flutter/features/room/widgets/room_lights_section.dart';
 import 'package:ha_flutter/features/room/widgets/room_media_section.dart';
+import 'package:ha_flutter/features/room/widgets/room_quick_controls.dart';
 import 'package:ha_flutter/features/room/widgets/room_sidebar.dart';
 import 'package:ha_flutter/ha/ha_providers.dart';
 import 'package:ha_flutter/ha/models/entity_state.dart';
+import 'package:ha_flutter/ha/room_registry_provider.dart';
 import 'package:ha_flutter/shared/background/background_engine.dart';
 import 'package:ha_flutter/shared/theme/app_theme.dart';
 import 'package:ha_flutter/shared/util/hs_color_converter.dart';
@@ -165,9 +166,16 @@ class _RoomDetailScreenState extends ConsumerState<RoomDetailScreen> {
         _CompactHeader(room: room),
         const SizedBox(height: 12),
         RoomAlertStrip(roomId: room.id),
+        if (room.quickControlDevices.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          RoomQuickControls(room: room, onOpen: _scrollTo, horizontal: true),
+        ],
         const SizedBox(height: 12),
         for (final section in sections) ...[
-          _sectionContent(room, section, wide: false),
+          KeyedSubtree(
+            key: _sectionKeys[section],
+            child: _sectionContent(room, section, wide: false),
+          ),
           const SizedBox(height: 16),
         ],
       ],

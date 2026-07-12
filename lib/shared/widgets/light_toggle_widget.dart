@@ -1,73 +1,51 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ha_flutter/ha/ha_providers.dart';
-import 'package:ha_flutter/shared/theme/app_theme.dart';
-import 'package:ha_flutter/shared/util/hs_color_converter.dart';
-import 'package:ha_flutter/shared/util/mdi_resolver.dart';
-import 'package:ha_flutter/shared/widgets/glass_card.dart';
+import 'package:ha_flutter/ha/models/room_device.dart';
+import 'package:ha_flutter/shared/widgets/control_card.dart';
+import 'package:ha_flutter/shared/widgets/device_control_descriptor.dart';
 import 'package:ha_flutter/shared/widgets/pending_overlay.dart';
+import 'package:ha_flutter/shared/widgets/power_toggle.dart';
 
-/// A glassmorphic on/off light tile that glows in the light's own colour when
-/// on. Unavailable lights render dimmed and non-interactive.
+/// A light group control rendered as a [ControlCard]: header icon, name, live
+/// status line, and a [PowerToggle] that calls `light.turn_on` / `light.turn_off`.
+/// The card glows in the light's `hs_color` (warm-white fallback) when on, animated
+/// over 300 ms by [GlassCard]; unavailable lights render dimmed and disabled.
 class LightToggleWidget extends ConsumerWidget {
   final String entityId;
   final String? name;
+
+  /// Individual light entities in the room, used for the "N on" status count.
+  final List<String> individualLights;
 
   const LightToggleWidget({
     super.key,
     required this.entityId,
     this.name,
+    this.individualLights = const [],
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final tokens = context.tokens;
-    final asyncState = ref.watch(entityStateProvider(entityId));
-    final state = asyncState.valueOrNull;
-    final isOn = state?.isOn ?? false;
-    final unavailable = state?.isUnavailable ?? false;
-    final label = name ?? state?.friendlyName ?? entityId;
+    final device = RoomDevice(
+      deviceId: entityId,
+      name: name ?? 'Lights',
+      role: DeviceRole.light,
+      entities: {'primary': entityId},
+      isGroup: true,
+    );
+    final d = DeviceControlDescriptor.describe(ref, device,
+        roomLights: individualLights);
 
     return PendingOverlay(
       entityId: entityId,
-      child: GlassCard(
-        glowColor: isOn ? HsColorConverter.glowFor(state!) : null,
-        dimmed: unavailable,
-        onTap:
-            unavailable ? null : () => ref.read(haServiceProvider).toggle(entityId),
-        child: Row(
-          children: [
-            Icon(
-              mdiIcon(state?.icon, fallback: domainFallback('light')),
-              color: isOn ? tokens.onAccent : tokens.offMuted,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  Text(
-                    unavailable
-                        ? 'Unavailable'
-                        : isOn
-                            ? 'On'
-                            : 'Off',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: tokens.offMuted,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+      child: ControlCard(
+        icon: d.icon,
+        name: d.name,
+        status: d.statusLine,
+        isOn: d.isOn,
+        unavailable: !d.isAvailable,
+        glowColor: d.glowColor,
+        trailing: PowerToggle(isOn: d.isOn, onTap: d.togglePower),
       ),
     );
   }

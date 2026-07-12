@@ -28,6 +28,16 @@ class AppTokens extends ThemeExtension<AppTokens> {
   final Color glassFill;
   final Color glassBorder;
 
+  /// Backdrop blur sigma applied by every glass surface (cards + dock).
+  final double glassBlurSigma;
+
+  /// Three-step severity scale for reading pills and status feedback. Hues stay
+  /// distinguishable from [onAccent] (amber): nominal is a desaturated green,
+  /// warning an orange, critical a red (D12).
+  final Color severityNominal;
+  final Color severityWarning;
+  final Color severityCritical;
+
   /// Standard corner radius for cards.
   final double cardRadius;
 
@@ -37,6 +47,10 @@ class AppTokens extends ThemeExtension<AppTokens> {
     required this.offMuted,
     required this.glassFill,
     required this.glassBorder,
+    required this.glassBlurSigma,
+    required this.severityNominal,
+    required this.severityWarning,
+    required this.severityCritical,
     required this.cardRadius,
   });
 
@@ -47,6 +61,10 @@ class AppTokens extends ThemeExtension<AppTokens> {
     Color? offMuted,
     Color? glassFill,
     Color? glassBorder,
+    double? glassBlurSigma,
+    Color? severityNominal,
+    Color? severityWarning,
+    Color? severityCritical,
     double? cardRadius,
   }) {
     return AppTokens(
@@ -55,6 +73,10 @@ class AppTokens extends ThemeExtension<AppTokens> {
       offMuted: offMuted ?? this.offMuted,
       glassFill: glassFill ?? this.glassFill,
       glassBorder: glassBorder ?? this.glassBorder,
+      glassBlurSigma: glassBlurSigma ?? this.glassBlurSigma,
+      severityNominal: severityNominal ?? this.severityNominal,
+      severityWarning: severityWarning ?? this.severityWarning,
+      severityCritical: severityCritical ?? this.severityCritical,
       cardRadius: cardRadius ?? this.cardRadius,
     );
   }
@@ -68,6 +90,11 @@ class AppTokens extends ThemeExtension<AppTokens> {
       offMuted: Color.lerp(offMuted, other.offMuted, t)!,
       glassFill: Color.lerp(glassFill, other.glassFill, t)!,
       glassBorder: Color.lerp(glassBorder, other.glassBorder, t)!,
+      glassBlurSigma: lerpDouble(glassBlurSigma, other.glassBlurSigma, t),
+      severityNominal: Color.lerp(severityNominal, other.severityNominal, t)!,
+      severityWarning: Color.lerp(severityWarning, other.severityWarning, t)!,
+      severityCritical:
+          Color.lerp(severityCritical, other.severityCritical, t)!,
       cardRadius: lerpDouble(cardRadius, other.cardRadius, t),
     );
   }
@@ -96,6 +123,12 @@ class AppTheme {
       offMuted: Color(0x8AFFFFFF),
       glassFill: Color(0x18FFFFFF),
       glassBorder: Color(0x30FFFFFF),
+      glassBlurSigma: 20,
+      // Spaced across the hue wheel so no step reads as the amber onAccent:
+      // green → orange → red (D12). Nominal reuses the prior confirm green.
+      severityNominal: Color(0xFF66BB6A),
+      severityWarning: Color(0xFFFFA726),
+      severityCritical: Color(0xFFEF5350),
       cardRadius: 20,
     );
 
@@ -120,6 +153,21 @@ class AppTheme {
         labelTextStyle: WidgetStateProperty.all(
           const TextStyle(fontSize: 11),
         ),
+      ),
+      // One chip style for every selector (mode/option chips, adaptive
+      // lighting, HVAC/purifier modes) so selection reads identically.
+      chipTheme: ChipThemeData(
+        backgroundColor: tokens.glassFill,
+        selectedColor: tokens.onAccent.withValues(alpha: 0.18),
+        checkmarkColor: tokens.onAccent,
+        side: BorderSide(color: tokens.glassBorder),
+        labelStyle: TextStyle(fontSize: 13, color: tokens.offMuted),
+        secondaryLabelStyle:
+            TextStyle(fontSize: 13, color: tokens.onAccent),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        showCheckmark: false,
       ),
       extensions: const [tokens],
     );
