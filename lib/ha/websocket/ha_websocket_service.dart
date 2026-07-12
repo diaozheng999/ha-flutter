@@ -66,9 +66,25 @@ class HaWebSocketService {
     _setStatus(_backoffSeconds == 1
         ? ConnectionStatus.connecting
         : ConnectionStatus.reconnecting);
+
+    // Acquire credentials separately from opening the socket: if the token is
+    // unavailable or invalid (e.g. a dead refresh token), reconnecting would
+    // just loop and hammer /auth/token. Stop and let the auth layer route to
+    // login instead. Only genuine socket failures below trigger a retry.
+    final String token;
+    final Uri uri;
     try {
-      final token = await _connection.getAccessToken();
-      final uri = _connection.websocketUri;
+      token = await _connection.getAccessToken();
+      uri = _connection.websocketUri;
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('HA WS: credentials unavailable, not reconnecting: $e');
+      }
+      _setStatus(ConnectionStatus.disconnected);
+      return;
+    }
+
+    try {
       final channel = WebSocketChannel.connect(uri);
       _channel = channel;
       await channel.ready;
@@ -94,7 +110,8 @@ class HaWebSocketService {
       _backoffSeconds = 1; // reset backoff on a clean connect
       _setStatus(ConnectionStatus.connected);
       await _subscribe();
-    } catch (_) {
+    } catch (e) {
+      if (kDebugMode) debugPrint('HA WS: connect failed, will retry: $e');
       await _teardownSocket();
       _scheduleReconnect();
     }

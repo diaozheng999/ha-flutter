@@ -139,7 +139,11 @@ class HaAuthService extends ChangeNotifier {
 
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body) as Map<String, dynamic>;
-        final token = HaToken.fromTokenResponse(json, haInstanceUrl);
+        // Persist the issuing client_id: HA binds the refresh token to it and
+        // rejects a refresh presenting a different one (desktop uses a loopback
+        // client_id, mobile the app id).
+        final token =
+            HaToken.fromTokenResponse(json, haInstanceUrl, clientId: clientId);
         await _storage.write(token);
         _token = token;
         _progressMessage = null;
@@ -185,9 +189,12 @@ class HaAuthService extends ChangeNotifier {
         body: {
           'grant_type': 'refresh_token',
           'refresh_token': token.refreshToken,
-          // Use the stable mobile client_id for refresh on all platforms.
-          // HA validates the refresh token itself; client_id is informational.
-          'client_id': mobileClientId,
+          // Replay the client_id the token was issued to. HA rejects a refresh
+          // whose client_id differs from the issuing one (the previous code
+          // always sent mobileClientId, which broke desktop/loopback logins).
+          // When unknown (tokens stored before clientId was persisted), omit it
+          // entirely — HA only enforces the match when client_id is present.
+          if (token.clientId != null) 'client_id': token.clientId!,
         },
       );
 

@@ -26,6 +26,7 @@ class HaTokenStorage implements TokenStorage {
   static const _keyRefreshToken = 'ha_refresh_token';
   static const _keyTokenExpiry = 'ha_token_expiry';
   static const _keyInstanceUrl = 'ha_instance_url';
+  static const _keyClientId = 'ha_client_id';
 
   final FlutterSecureStorage _storage;
 
@@ -41,6 +42,11 @@ class HaTokenStorage implements TokenStorage {
       value: token.tokenExpiry.toString(),
     );
     await _storage.write(key: _keyInstanceUrl, value: token.instanceUrl);
+    if (token.clientId != null) {
+      await _storage.write(key: _keyClientId, value: token.clientId);
+    } else {
+      await _storage.delete(key: _keyClientId);
+    }
   }
 
   @override
@@ -50,6 +56,7 @@ class HaTokenStorage implements TokenStorage {
     final refreshToken = await _storage.read(key: _keyRefreshToken);
     final tokenExpiryStr = await _storage.read(key: _keyTokenExpiry);
     final instanceUrl = await _storage.read(key: _keyInstanceUrl);
+    final clientId = await _storage.read(key: _keyClientId);
     if (refreshToken == null || tokenExpiryStr == null || instanceUrl == null) {
       return null;
     }
@@ -58,6 +65,7 @@ class HaTokenStorage implements TokenStorage {
       refreshToken: refreshToken,
       tokenExpiry: int.parse(tokenExpiryStr),
       instanceUrl: instanceUrl,
+      clientId: clientId,
     );
   }
 
@@ -67,6 +75,7 @@ class HaTokenStorage implements TokenStorage {
     await _storage.delete(key: _keyRefreshToken);
     await _storage.delete(key: _keyTokenExpiry);
     await _storage.delete(key: _keyInstanceUrl);
+    await _storage.delete(key: _keyClientId);
   }
 }
 
