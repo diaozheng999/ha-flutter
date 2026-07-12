@@ -193,3 +193,72 @@
   "all room lighting" off computation (D9).
 - **Handoff note:** If included, room off (D9) and the ungrouped bucket (D5)
   must extend beyond the `light` domain.
+
+### D14 - Role assignment via HA labels (resolves D6) (2026-07-12)
+
+- **Decision:** Role is assigned by HA **labels** on the canonical control unit,
+  using a `role:<name>` convention. Confirmed choice; D6 is now closed.
+- **Why:** Native to HA, editable from its UI, and multi-valued so it coexists
+  with the existing `matterbridge` labels. The app reads `labels` via
+  `ha_get_entity` during room resolution.
+- **Alternatives considered:** Naming convention (fragile, breaks on rename);
+  Flutter-side `room_overrides` (not editable without a code change, invisible
+  to HA). Both rejected.
+- **Status:** Decided (supersedes D6 "Open").
+- **Handoff note:** Because the taxonomy is configurable (D17), the label
+  namespace is open — any `role:<name>` is valid; ordering/display is config
+  (D17). The label reader must be added to the data layer.
+
+### D15 - Role-labelled entity is the canonical control unit (resolves D8) (2026-07-12)
+
+- **Decision:** The entity carrying a `role:<name>` label **is** the canonical
+  control unit for that layer. Its members (if it is a group) render as its
+  drill-down. Overlapping/nested groups that are not role-labelled do not render
+  as layers; their members reach the user only via a labelled ancestor or the
+  ungrouped bucket (D5). One label per (room, role) is the invariant.
+- **Why:** Overlap and nesting (kitchen_lights ⊃ kitchen_spotlights; a bulb in
+  both entry_lights and dining_table_lights) make automatic canonicalisation
+  ambiguous. Anchoring on the human-applied role label makes the choice explicit
+  and deterministic, and reuses D14's mechanism instead of inventing a tie-break.
+- **Alternatives considered:** Surface both parent and sub-group (rejected —
+  re-introduces double control/double count); flatten to individuals grouped by
+  label (rejected — discards HA's free capability-union and aggregate state).
+- **Status:** Decided (supersedes D8 "Open").
+- **Handoff note:** Validation concern: two entities labelled the same role in
+  one room, or a bulb reachable from two labelled units. The resolver needs a
+  defined behaviour (warn + pick first? surface a config warning?) — see design
+  Open Questions.
+
+### D16 - Switch-controlled lighting is in scope (resolves D13) (2026-07-12)
+
+- **Decision:** Fixtures controlled via `switch.*` are treated as lighting from
+  the first change. The lighting-fixture abstraction spans `light.*` and
+  `switch.*`; a switch is an on/off-only fixture (the bottom rung of the
+  capability ladder).
+- **Why:** The user already treats them as lights (`scene.all_off` toggles
+  `switch.entry_switch_*` and `switch.0xa4c1388aecbb45dd_l*`). Excluding them
+  would make room-off (D9) silently incomplete and leave real lights unreachable.
+- **Alternatives considered:** Light-domain-only first change (rejected — the
+  user's own "all off" proves switches are lighting; deferring guarantees a
+  wrong room-off).
+- **Status:** Decided (supersedes D13 "Open").
+- **Handoff note:** Room-off (D9), the ungrouped bucket (D5), and role labelling
+  (D14) all extend to `switch.*`. A switch has no brightness/colour — the
+  capability-typed primitive (D4/D11) already degrades to on/off at the bottom
+  rung, so a switch is just the minimal case. Distinguish light-controlling
+  switches from other switches — likely by the presence of a `role:<name>` label
+  (a switch is lighting iff it is role-labelled), avoiding a domain-wide sweep.
+
+### D17 - Role taxonomy is configurable, not a fixed three (2026-07-12)
+
+- **Decision:** The set of role layers is configurable rather than a hard-coded
+  overhead/task/ambient. Layers are dynamic per room, ordered by config; the
+  layout renders a variable number of layers.
+- **Why:** The user chose flexibility; rooms differ and the label namespace (D14)
+  is already open-ended.
+- **Alternatives considered:** Fixed overhead/task/ambient (rejected — simpler
+  but the user wants an open set; a fixed enum would fight the open label space).
+- **Status:** Decided.
+- **Handoff note:** Needs a small config surface: the ordered list of roles and
+  their display (name/icon). Unknown/unlabelled roles fall back to the ungrouped
+  bucket (D5). The room layout (L1) must not assume a fixed layer count.
