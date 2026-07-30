@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ha_flutter/config/room_config.dart';
 import 'package:ha_flutter/config/room_overrides.dart';
 import 'package:ha_flutter/ha/ha_providers.dart';
+import 'package:ha_flutter/ha/lighting_resolver.dart';
 import 'package:ha_flutter/ha/models/registry_entry.dart';
 import 'package:ha_flutter/ha/models/room_device.dart';
 
@@ -28,6 +29,25 @@ final roomConfigsProvider = FutureProvider<List<RoomConfig>>((ref) async {
   // ── Build lookup maps ──────────────────────────────────────────────────────
 
   final deviceById = {for (final d in deviceList) d.id: d};
+  final deviceAreaById = {for (final d in deviceList) d.id: d.areaId};
+
+  // Lighting resolution reads group membership and capabilities from **state**,
+  // so lighting candidates' states must be loaded before rooms are resolved
+  // (the general bootstrap below happens too late for this).
+  final lightingCandidateIds = <String>{
+    for (final e in entityList)
+      if (isLightingCandidate(e)) e.entityId,
+  };
+  try {
+    final states = await ref
+        .read(haRestClientProvider)
+        .fetchStates(lightingCandidateIds);
+    ref.read(entityRepositoryProvider).putAll(states);
+  } catch (_) {
+    // Best-effort: without state, groups resolve as leaves and the implicit
+    // fallback keeps the lights section usable.
+  }
+  final repo = ref.read(entityRepositoryProvider);
 
   // Group enabled entities by device_id.
   final entitiesByDevice = <String, List<EntityRegistryEntry>>{};
@@ -102,14 +122,26 @@ final roomConfigsProvider = FutureProvider<List<RoomConfig>>((ref) async {
       ));
     }
 
-    if (roomDevices.isEmpty) continue;
-
     final override = roomOverrides[areaId];
+
+    // Resolved before the emptiness check: a room whose only lighting is an
+    // area-less group rescued via its members still deserves to exist.
+    final lighting = resolveRoomLighting(
+      areaId: areaId,
+      entities: entityList,
+      deviceAreaById: deviceAreaById,
+      stateOf: repo.get,
+      roleOrder: override?.lightingRoles,
+    );
+
+    if (roomDevices.isEmpty && lighting.isEmpty) continue;
+
     rooms.add(RoomConfig(
       id: areaId,
       name: area.name,
       icon: area.icon,
       devices: roomDevices,
+      lighting: lighting,
       adaptiveLightingSwitch: override?.adaptiveLightingSwitch,
       alertRules: override?.alertRules ?? const [],
       temperatureSensor: override?.temperatureSensor,
@@ -125,7 +157,21 @@ final roomConfigsProvider = FutureProvider<List<RoomConfig>>((ref) async {
       for (final d in r.devices) {
         debugPrint('[RoomRegistry]   ${r.id} | ${d.role.name} | ${d.name} | ${d.entities}');
       }
+      final l = r.lighting;
+      debugPrint('[RoomRegistry]   ${r.id} | lighting: '
+          '${l.layers.length} layer(s)${l.isImplicit ? ' (implicit)' : ''}, '
+          '${l.ungrouped.length} ungrouped');
+      for (final layer in l.layers) {
+        debugPrint('[RoomRegistry]     layer "${layer.role}" -> '
+            '${layer.unit.entityId} (${layer.members.length} member(s))');
+      }
     }
+    // Verifies D20: whether the WS entity registry actually carries labels /
+    // platform. If both are empty across the board, role layers cannot resolve.
+    final labelled = entityList.where((e) => e.labels.isNotEmpty).length;
+    final withPlatform = entityList.where((e) => e.platform != null).length;
+    debugPrint('[RoomRegistry] registry fields: $labelled/${entityList.length} '
+        'entities have labels, $withPlatform have platform');
   }
   rooms.sort((a, b) {
     final ao = roomOverrides[a.id]?.sortOrder ?? 999;
@@ -139,6 +185,7 @@ final roomConfigsProvider = FutureProvider<List<RoomConfig>>((ref) async {
   final allEntityIds = <String>[
     for (final r in rooms) ...[
       for (final d in r.devices) ...d.entities.values,
+      ...r.lighting.allFixtureIds,
       ?r.temperatureSensor,
       ?r.humiditySensor,
       ?r.illuminanceSensor,

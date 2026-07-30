@@ -5,40 +5,40 @@ comfort). Each phase is independently shippable; groups are dependency-ordered.
 
 ## 1. Data layer — labels & fixture model (Phase 1: coherence)
 
-- [ ] 1.1 Add `labels` (List<String>) to `EntityRegistryEntry`
+- [x] 1.1 Add `labels` (List<String>) to `EntityRegistryEntry`
       (`lib/ha/models/registry_entry.dart`) and parse it in the WS
       `fetchEntityRegistry` mapping (`lib/ha/websocket/ha_websocket_service.dart`)
-- [ ] 1.2 Add a `LightingFixture` model (entity id, domain, capability descriptor,
+- [x] 1.2 Add a `LightingFixture` model (entity id, domain, capability descriptor,
       optional group members, `isTemplate`, `isGroup`) spanning `light.*` and
       `switch.*`
-- [ ] 1.3 Add a `LightingLayer` model (role name, canonical `LightingFixture`,
+- [x] 1.3 Add a `LightingLayer` model (role name, canonical `LightingFixture`,
       member fixtures) and a room-scoped `RoomLighting` (ordered layers +
       ungrouped bucket)
-- [ ] 1.4 Define the capability descriptor: derive supported rungs (on/off,
+- [x] 1.4 Define the capability descriptor: derive supported rungs (on/off,
       brightness, colour-temp, colour, effects) from `supported_color_modes` /
       `effect_list` for lights, on/off-only for switches; carry a discrete-steps
       flag for stepped colour-temp (template lights)
 
 ## 2. Data layer — resolution (Phase 1: coherence)
 
-- [ ] 2.1 Read group members from the group entity's `entity_id` **state**
+- [x] 2.1 Read group members from the group entity's `entity_id` **state**
       attribute (via `entityRepository` after the existing REST bootstrap), not
       the registry
-- [ ] 2.2 Area-less group rescue: when a group light lacks `area_id`, attribute it
+- [x] 2.2 Area-less group rescue: when a group light lacks `area_id`, attribute it
       to the room derived from its members' areas (extend the room build in
       `lib/ha/room_registry_provider.dart`)
-- [ ] 2.3 Include role-labelled `switch.*` entities as lighting fixtures; exclude
+- [x] 2.3 Include role-labelled `switch.*` entities as lighting fixtures; exclude
       unlabelled switches (do not sweep the whole `switch` domain)
-- [ ] 2.4 Resolve layers: read `role:<name>` labels, pick the labelled entity as
+- [x] 2.4 Resolve layers: read `role:<name>` labels, pick the labelled entity as
       the canonical unit per (room, role), attach its members, and suppress
       unlabelled nested/overlapping groups from forming their own layer
-- [ ] 2.5 Apply the default ordered taxonomy `overhead / task / ambient` with
+- [x] 2.5 Apply the default ordered taxonomy `overhead / task / ambient` with
       per-room override support; append non-default `role:<name>` layers after the
       defaults; route unlabelled fixtures to the "Other" bucket
-- [ ] 2.6 Handle mislabelling deterministically (two entities one role, or a member
+- [x] 2.6 Handle mislabelling deterministically (two entities one role, or a member
       reachable from two labelled units) per the resolver rule chosen for the
       design Open Question; emit a debug warning rather than silently picking
-- [ ] 2.7 Expose `RoomLighting` off `RoomConfig` / a provider; keep a single
+- [x] 2.7 Expose `RoomLighting` off `RoomConfig` / a provider; keep a single
       implicit layer as the fallback when a room has no role labels so the screen
       never regresses
 

@@ -282,3 +282,99 @@
   labelled fixtures renders empty/absent rather than as an error. `role:<name>`
   labels outside the default three are honoured (D17) and appended after them
   unless the room overrides ordering.
+
+### D19 - Stepped colour temperature is app-configured, not detected (2026-07-12)
+
+- **Decision:** Discrete/quantised colour-temperature ranges are declared in
+  `lib/config/lighting_config.dart` (`steppedColorTempKelvins`, keyed by entity
+  id) rather than detected from HA. `LightCapabilities.fromState` accepts the
+  step list as a parameter and exposes `isSteppedColorTemp`.
+- **Why:** Discovered while implementing task 1.4: HA advertises
+  `min_color_temp_kelvin` / `max_color_temp_kelvin` as a **continuous** range even
+  when the device accepts only a few values. There is no attribute meaning "my
+  range is discrete", so the spec's stepped-colour-temp scenario cannot be
+  satisfied by detection alone. The knowledge for `light.bedroom_light` /
+  `light.study_light` came from the user's own entity aliases (7 brightness
+  levels, 3 temperatures at 2700/4000/6500 K), i.e. human knowledge, not HA data.
+- **Alternatives considered:** Inferring discreteness from a narrow min/max span
+  (rejected — unreliable, and these lights report a normal wide span); probing by
+  writing values and reading back (rejected — mutates the user's lights); giving
+  up on stepped support (rejected — D4 and the spec require it).
+- **Status:** Implemented
+- **Handoff note:** Adding a stepped fixture is a one-line config edit. If HA ever
+  exposes discrete ranges natively, `fromState` is the single place to change.
+
+### D20 - Role/platform read from the entity registry; WS label availability is a verification item (2026-07-12)
+
+- **Decision:** `EntityRegistryEntry` gained `labels` and `platform`, both parsed
+  defensively (missing → empty list / null). `isGroupPlatform` and
+  `isTemplatePlatform` derive from `platform`, giving registry-time group/template
+  detection before any state has loaded.
+- **Why:** Role resolution (D14) needs labels, and knowing group-vs-template at
+  registry time avoids ordering dependencies on state arrival. Parsing defensively
+  means a registry response without `labels` degrades to "no layers" rather than
+  crashing.
+- **Verification item (not yet confirmed):** whether HA's WebSocket
+  `config/entity_registry/list` includes `labels` and `platform` in **this**
+  instance's response. `ha_get_entity` (a different code path) does return both.
+  If the WS list omits them, layers will silently resolve empty and the
+  implicit-layer fallback (task 2.7) will keep the screen working — but the
+  feature will not populate until the fetch is switched to a per-entity or
+  display-oriented registry call.
+- **Status:** Implemented (parsing); WS field availability to be verified in
+  task 8.
+- **Handoff note:** Verify by logging one parsed entry's `labels`/`platform` when
+  running against live HA; this is the single riskiest unverified assumption in
+  the change.
+
+### D21 - Resolver rules for duplicate roles, shared members, and redundant groups (resolves the design's mislabelling Open Question) (2026-07-12)
+
+- **Decision:** Three deterministic rules, each emitting a `kDebugMode` warning
+  rather than failing or silently guessing:
+  1. **Two entities labelled the same role in one room** — prefer a group over a
+     leaf (a group commands more), then the larger group, then the lowest entity
+     id for run-to-run stability.
+  2. **A member reachable from two role-labelled units** — the layer earlier in
+     the configured role order claims it; later layers omit it. A fixture is
+     therefore never controlled from two layers.
+  3. **An unlabelled group overlapping a role layer** — suppressed entirely
+     (commanding it would reach fixtures a layer already owns), and its
+     *uncovered* members are promoted into the ungrouped bucket so nothing
+     becomes unreachable. An unlabelled group with no overlap is kept whole,
+     since it is still a useful single unit.
+- **Why:** Task 2.6 and the design Open Question required a deterministic rule.
+  Rule 3 is the one the spec scenario implies but does not spell out: suppressing
+  `light.kitchen_lights` as a *layer* is not enough — leaving it in the ungrouped
+  bucket would re-create the double-control problem it was suppressed to avoid,
+  while dropping it outright would strand `light.kitchen_ceiling_light`.
+- **Alternatives considered:** Failing loudly on ambiguity (rejected — a
+  mislabel in HA should not break the room screen); surfacing a user-visible
+  config warning (deferred — debug logging first, promote later if mislabels turn
+  out to be common); keeping overlapping unlabelled groups (rejected — double
+  control).
+- **Status:** Implemented, covered by `test/lighting_resolver_test.dart`
+  (20 tests, all passing).
+- **Handoff note:** The rules live in `lib/ha/lighting_resolver.dart`
+  (`_pickCanonicalUnit`, the `claimed` set, and the ungrouped-bucket pass). If a
+  user-visible warning is wanted later, the three `debugPrint` sites are the
+  hooks.
+
+### D22 - Lighting states are fetched before room resolution (2026-07-12)
+
+- **Decision:** `roomConfigsProvider` now REST-fetches the states of all lighting
+  candidates (all `light.*` plus role-labelled `switch.*`) **before** building
+  rooms, and the room-emptiness check runs after lighting resolution so a room
+  whose only lighting is a rescued area-less group still exists.
+- **Why:** Group membership lives in the `entity_id` **state** attribute, and
+  area-less groups are attributed to a room via their members — so resolution
+  needs state. The provider's existing bootstrap ran *after* rooms were built and
+  derived its id list *from* those rooms, a chicken-and-egg the new pass breaks.
+  Bounded cost: one extra REST call over ~29 entities.
+- **Alternatives considered:** Resolving lighting lazily in a separate provider
+  after state arrives (rejected — layers would pop in after first paint and the
+  area-less rescue could not influence which rooms exist); subscribing before
+  resolving (rejected — slower and racier than one bounded REST fetch).
+- **Status:** Implemented
+- **Handoff note:** The fetch is best-effort; on failure groups resolve as leaves
+  and the implicit-layer fallback keeps the section usable. Layer/member ids are
+  added to the WS subscription list so members stay live once drilled into.

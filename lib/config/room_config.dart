@@ -1,5 +1,6 @@
 import 'package:ha_flutter/config/alert_rules.dart';
 import 'package:ha_flutter/ha/models/room_device.dart';
+import 'package:ha_flutter/ha/models/room_lighting.dart';
 
 export 'package:ha_flutter/config/alert_rules.dart';
 
@@ -13,6 +14,10 @@ class RoomConfig {
   final List<RoomDevice> devices;
   final String? adaptiveLightingSwitch;
   final List<AlertRule> alertRules;
+
+  /// Lighting resolved into role layers + an ungrouped bucket. Empty for rooms
+  /// with no lighting fixtures.
+  final RoomLighting lighting;
 
   /// Environment sensor entity ids — supplied via [RoomOverride] until
   /// auto-detection from device classes is implemented.
@@ -28,6 +33,7 @@ class RoomConfig {
     required this.devices,
     this.adaptiveLightingSwitch,
     this.alertRules = const [],
+    this.lighting = const RoomLighting(),
     this.temperatureSensor,
     this.humiditySensor,
     this.illuminanceSensor,
