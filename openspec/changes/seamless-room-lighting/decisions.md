@@ -378,3 +378,66 @@
 - **Handoff note:** The fetch is best-effort; on failure groups resolve as leaves
   and the implicit-layer fallback keeps the section usable. Layer/member ids are
   added to the WS subscription list so members stay live once drilled into.
+
+### D23 - Colour/effects built in phase 1 code, and the superseded light widgets retired (2026-07-12)
+
+- **Decision:** `LightColorPicker` and `LightEffectSelector` (planned as phase 3,
+  group 6) were written during phase 1 because `CapabilityLightControl`
+  references them directly. `LightTile` and `LightToggleWidget` are deleted, their
+  role taken over by `CapabilityLightControl`; `test/light_tile_test.dart` is
+  removed and `control_scheme_render_test.dart`'s light-group case now exercises
+  the new primitive.
+- **Why:** Phases order *shipping*, not code — leaving the primitive referencing
+  non-existent widgets would not compile. After the section rewrite both old
+  widgets had zero production call sites, so keeping them would be dead code of
+  exactly the kind the previous change's cleanup removed. Their behaviours
+  (tap-toggle, drag-to-zero → `turn_off`, unavailable dimming) are covered by the
+  new `test/capability_light_control_test.dart` before deletion, so coverage did
+  not regress.
+- **Alternatives considered:** Stubbing colour/effects until phase 3 (rejected —
+  pointless churn); keeping the old widgets around (rejected — dead code, and two
+  competing light controls is the incoherence this change exists to remove).
+- **Status:** Implemented. Colour is sent as `hs_color`, which HA converts to each
+  light's native mode (xy for Hue, rgb for Yeelight), so one picker serves the
+  whole fleet.
+- **Handoff note:** Groups 3, 4, 5, 6 are complete; the expression rungs are
+  live behind a "Colour & effects" disclosure rather than waiting for phase 3.
+
+### D24 - Master off commands top-level units, not every fixture (2026-07-12)
+
+- **Decision:** The master "off" action calls `turn_off` on
+  `RoomLighting.controlUnitIds` (layer units + ungrouped fixtures) rather than
+  literally iterating `allFixtureIds`.
+- **Why:** Turning off a group turns off its members, so commanding units covers
+  every fixture transitively while avoiding a burst of redundant service calls
+  (and the state churn/flicker they cause). This satisfies the spec's intent —
+  all of the room's lighting goes off, and `scene.all_off` is not reused — via
+  the smaller call set. Recorded because it deviates from a literal reading of the
+  spec scenario's "each resolved lighting fixture".
+- **Alternatives considered:** Calling `turn_off` on every fixture id (rejected —
+  duplicate calls per group member); a single `homeassistant.turn_off` with all
+  ids (rejected — loses the per-domain routing the service facade provides).
+- **Status:** Implemented
+- **Handoff note:** `controlUnitIds` is exhaustive by construction: every member
+  belongs to a layer whose unit is included, and unlabelled leaves are in the
+  ungrouped bucket. If layer nesting ever deepens, re-check that invariant.
+
+### D25 - Comfort scene resolved by naming convention (resolves task 7.1) (2026-07-12)
+
+- **Decision:** The comfort scene is `scene.<area_id>_comfort`, resolved by
+  `comfortSceneProvider`. Absent scene → null → master "on" falls back to a plain
+  turn-on.
+- **Why:** Task 7.1 offered naming convention vs a scene label. The convention
+  needs no extra HA metadata and is self-documenting, and because resolution is
+  null-safe the feature simply starts working for a room the moment its scene is
+  authored — no code change, matching the user's "hand configure this room by
+  room" intent. Scene labels would need a second label-registry read for scenes,
+  which the app does not currently fetch.
+- **Alternatives considered:** A `comfort` label on the scene (rejected for now —
+  more moving parts, no benefit while one scene per room is the model); a
+  `RoomOverride` field (rejected — a code edit per room).
+- **Status:** Implemented (resolution + fallback). Task 7.3 — actually authoring
+  the scenes in HA — remains the user's manual step.
+- **Handoff note:** Rooms are keyed by HA `area_id`, so the expected ids are
+  `scene.living_room_comfort`, `scene.kitchen_comfort`, `scene.bedroom_comfort`,
+  `scene.study_comfort`, `scene.entrance_comfort`, `scene.pantry_comfort`.

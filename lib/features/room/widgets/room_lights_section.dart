@@ -1,127 +1,80 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_material_design_icons/flutter_material_design_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ha_flutter/config/ha_entities.dart';
-import 'package:ha_flutter/ha/ha_providers.dart';
+import 'package:ha_flutter/config/room_config.dart';
+import 'package:ha_flutter/features/room/widgets/lighting_layer_card.dart';
+import 'package:ha_flutter/features/room/widgets/room_lighting_l0.dart';
 import 'package:ha_flutter/shared/theme/app_theme.dart';
-import 'package:ha_flutter/shared/widgets/brightness_slider.dart';
-import 'package:ha_flutter/shared/widgets/color_temperature_slider.dart';
-import 'package:ha_flutter/shared/widgets/glass_card.dart';
-import 'package:ha_flutter/shared/widgets/light_tile.dart';
-import 'package:ha_flutter/shared/widgets/light_toggle_widget.dart';
-import 'package:ha_flutter/shared/widgets/selection_chips.dart';
+import 'package:ha_flutter/shared/widgets/capability_light_control.dart';
 
-/// Lights & Ambiance section: group toggle, width-capped group sliders, an
-/// adaptive-lighting chip, and the individual lights — an always-visible tile
-/// grid on wide layouts, an expander-collapsed list on compact ones.
-class RoomLightsSection extends ConsumerStatefulWidget {
+/// Lights & Ambiance section, presented as a progressively-disclosed surface:
+/// the glance layer (scenes, master, adaptive lighting) above the room's
+/// lighting-role layers, with unlabelled fixtures collected under "Other".
+///
+/// Dials are deliberately absent from the top level — they live inside each
+/// layer's control, one drill-down away.
+class RoomLightsSection extends ConsumerWidget {
   final RoomConfig room;
   final bool wide;
+
   const RoomLightsSection({super.key, required this.room, this.wide = false});
 
   @override
-  ConsumerState<RoomLightsSection> createState() => _RoomLightsSectionState();
-}
-
-class _RoomLightsSectionState extends ConsumerState<RoomLightsSection> {
-  bool _expanded = false;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final tokens = context.tokens;
-    final room = widget.room;
-    final group = room.lightGroup;
-    final individuals = room.individualLights;
+    final lighting = room.lighting;
+    if (lighting.isEmpty) return const SizedBox.shrink();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (group != null) ...[
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: kControlMaxWidth),
-            child: LightToggleWidget(
-              entityId: group,
-              name: 'All ${room.name} lights',
-              individualLights: individuals,
-            ),
-          ),
-          const SizedBox(height: 8),
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: kControlMaxWidth),
-            child: GlassCard(
-              child: Column(
-                children: [
-                  BrightnessSlider(entityId: group),
-                  ColorTemperatureSlider(entityId: group),
-                ],
-              ),
-            ),
-          ),
-        ],
-        if (room.adaptiveLightingSwitch != null) ...[
-          const SizedBox(height: 8),
-          _AdaptiveLightingChip(entityId: room.adaptiveLightingSwitch!),
-        ],
-        if (individuals.isNotEmpty) ...[
-          const SizedBox(height: 16),
-          if (widget.wide)
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Two columns when there is room for them, so a wide window does not
+        // leave layer cards stretched across the whole pane.
+        final columns =
+            wide && constraints.maxWidth >= kControlMaxWidth * 2 ? 2 : 1;
+        final itemWidth = columns == 2
+            ? (constraints.maxWidth - 12) / 2
+            : (constraints.maxWidth.isFinite
+                ? constraints.maxWidth.clamp(0.0, kControlMaxWidth)
+                : kControlMaxWidth);
+
+        Widget sized(Widget child) =>
+            SizedBox(width: itemWidth, child: child);
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            sized(RoomLightingL0(room: room)),
+            const SizedBox(height: 16),
             Wrap(
               spacing: 12,
               runSpacing: 12,
               children: [
-                for (final id in individuals)
-                  SizedBox(width: 200, child: LightTile(entityId: id)),
+                for (final layer in lighting.layers)
+                  sized(LightingLayerCard(layer: layer)),
               ],
-            )
-          else ...[
-            TextButton.icon(
-              onPressed: () => setState(() => _expanded = !_expanded),
-              icon: Icon(_expanded ? Icons.expand_less : Icons.expand_more),
-              label: Text(
-                _expanded ? 'Hide individual lights' : 'Show individual lights',
-                style: TextStyle(color: tokens.offMuted),
-              ),
             ),
-            AnimatedCrossFade(
-              duration: const Duration(milliseconds: 250),
-              crossFadeState: _expanded
-                  ? CrossFadeState.showFirst
-                  : CrossFadeState.showSecond,
-              firstChild: Column(
+            if (lighting.ungrouped.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Text(
+                'Other',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: tokens.offMuted,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
                 children: [
-                  for (final id in individuals) ...[
-                    LightTile(entityId: id),
-                    const SizedBox(height: 8),
-                  ],
+                  for (final fixture in lighting.ungrouped)
+                    sized(CapabilityLightControl(fixture: fixture)),
                 ],
               ),
-              secondChild: const SizedBox(width: double.infinity),
-            ),
+            ],
           ],
-        ],
-      ],
-    );
-  }
-}
-
-/// Toggle chip for the room's adaptive-lighting switch.
-class _AdaptiveLightingChip extends ConsumerWidget {
-  final String entityId;
-  const _AdaptiveLightingChip({required this.entityId});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(entityStateProvider(entityId)).valueOrNull;
-    if (state == null || state.isUnavailable) return const SizedBox.shrink();
-    final isOn = state.isOn;
-    final service = ref.read(haServiceProvider);
-
-    return OptionChip(
-      icon: MdiIcons.themeLightDark,
-      label: 'Adaptive lighting',
-      selected: isOn,
-      onToggle: (_) =>
-          isOn ? service.turnOff(entityId) : service.turnOn(entityId),
+        );
+      },
     );
   }
 }

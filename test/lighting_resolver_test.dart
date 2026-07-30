@@ -31,10 +31,10 @@ EntityState _state(
       entityId: entityId,
       state: state,
       attributes: {
-        if (members != null) 'entity_id': members,
+        'entity_id': ?members,
         if (entityId.startsWith('light.')) 'supported_color_modes': colorModes,
         if (effects.isNotEmpty) 'effect_list': effects,
-        if (friendlyName != null) 'friendly_name': friendlyName,
+        'friendly_name': ?friendlyName,
       },
       lastUpdated: DateTime(2026),
     );

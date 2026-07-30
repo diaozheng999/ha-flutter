@@ -44,65 +44,65 @@ comfort). Each phase is independently shippable; groups are dependency-ordered.
 
 ## 3. Capability-typed control primitive (Phase 1: coherence)
 
-- [ ] 3.1 Build `CapabilityLightControl` (on the existing `ControlCard` /
+- [x] 3.1 Build `CapabilityLightControl` (on the existing `ControlCard` /
       `DeviceControlDescriptor` pattern) rendering only the rungs the descriptor
       supports; reuse glow, dim/unavailable, and pending-overlay behaviour
-- [ ] 3.2 Stepped colour-temperature: `ColorTemperatureSlider` presents discrete
+- [x] 3.2 Stepped colour-temperature: `ColorTemperatureSlider` presents discrete
       steps when the fixture exposes a discrete set (template lights)
-- [ ] 3.3 On/off-only rendering for binary lights and switch fixtures (toggle only,
+- [x] 3.3 On/off-only rendering for binary lights and switch fixtures (toggle only,
       no brightness slot)
-- [ ] 3.4 Group control unit applies rung changes to the group entity using its
+- [x] 3.4 Group control unit applies rung changes to the group entity using its
       HA-unioned capabilities (no client-side union)
 
 ## 4. Room lighting section restructure (Phase 1: coherence)
 
-- [ ] 4.1 Rebuild `lib/features/room/widgets/room_lights_section.dart` around
+- [x] 4.1 Rebuild `lib/features/room/widgets/room_lights_section.dart` around
       `RoomLighting`: L1 layer cards (collapsed) + the "Other" bucket, replacing
       the flat group-toggle + always-on sliders + tile list
-- [ ] 4.2 Add `LightingLayerCard` (a `ControlCard` wrapping the layer's
+- [x] 4.2 Add `LightingLayerCard` (a `ControlCard` wrapping the layer's
       `CapabilityLightControl`), variable count, collapsed by default
-- [ ] 4.3 L2 drill-down: expanding a layer reveals member fixtures as
+- [x] 4.3 L2 drill-down: expanding a layer reveals member fixtures as
       `CapabilityLightControl`s
-- [ ] 4.4 Remove the always-visible top-level group brightness/colour-temp slider
+- [x] 4.4 Remove the always-visible top-level group brightness/colour-temp slider
       block; migrate the adaptive-lighting chip into the new L0 row
 
 ## 5. Speed layer — scenes & smart master (Phase 2)
 
-- [ ] 5.1 Per-room scene association: select scenes whose `entity_id` members
+- [x] 5.1 Per-room scene association: select scenes whose `entity_id` members
       overlap the room's lighting fixtures; exclude scenes whose members are not
       lighting fixtures (fan-speed scenes)
-- [ ] 5.2 Render L0 scene chips that call `scene.turn_on`
-- [ ] 5.3 Smart master control: "off" turns off all resolved room lighting
+- [x] 5.2 Render L0 scene chips that call `scene.turn_on`
+- [x] 5.3 Smart master control: "off" turns off all resolved room lighting
       fixtures (light + switch), never `scene.all_off`
-- [ ] 5.4 Smart master "on": recall the room's comfort scene when resolvable, else
+- [x] 5.4 Smart master "on": recall the room's comfort scene when resolvable, else
       plain `turn_on` fallback; master shows plain on/off status (no false
       "comfort active")
-- [ ] 5.5 Assemble the L0 row (scene chips + master + adaptive toggle) at the top
+- [x] 5.5 Assemble the L0 row (scene chips + master + adaptive toggle) at the top
       of the section
 
 ## 6. Expression layer — colour & effects (Phase 3)
 
-- [ ] 6.1 Colour picker control, shown only for colour-capable fixtures/layers;
+- [x] 6.1 Colour picker control, shown only for colour-capable fixtures/layers;
       calls `light.turn_on` with the appropriate colour param
-- [ ] 6.2 Effect selector control, shown only when `effect_list` is non-empty
+- [x] 6.2 Effect selector control, shown only when `effect_list` is non-empty
       (group uses unioned list); calls `light.turn_on` with `effect`
-- [ ] 6.3 Wire colour + effects into the L3 drill-down of
+- [x] 6.3 Wire colour + effects into the L3 drill-down of
       `CapabilityLightControl`, capability-gated
 
 ## 7. Comfort scenes (Phase 4 — last, hand-configured per room)
 
-- [ ] 7.1 Decide + implement comfort-scene resolution (naming convention
+- [x] 7.1 Decide + implement comfort-scene resolution (naming convention
       `scene.<room>_comfort` vs scene label) per the design Open Question
-- [ ] 7.2 Switch the smart master "on" action to recall the resolved comfort scene
+- [x] 7.2 Switch the smart master "on" action to recall the resolved comfort scene
       (fallback remains for rooms without one)
 - [ ] 7.3 Author comfort scenes per room in HA (manual, user-driven; not app code)
 
 ## 8. Verification
 
-- [ ] 8.1 `flutter analyze` clean; add/adjust widget tests for the capability
+- [x] 8.1 `flutter analyze` clean; add/adjust widget tests for the capability
       primitive (each ladder rung, stepped temp, switch on/off) and the layer
       resolver (area-less rescue, de-tangle, ungrouped bucket, scene filter)
-- [ ] 8.2 `flutter build windows` succeeds
+- [x] 8.2 `flutter build windows` succeeds
 - [ ] 8.3 Verify the room screen end-to-end at compact (< 840 dp) and wide
       (≥ 840 dp): layers collapse/expand, capability-typed controls, scene chips,
       smart master off=all / on=fallback, colour + effects on capable fixtures
