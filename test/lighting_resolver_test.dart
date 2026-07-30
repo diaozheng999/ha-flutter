@@ -51,6 +51,16 @@ void main() {
       expect(roleOfLabels(['matterbridge']), isNull);
       expect(roleOfLabels(['role:']), isNull);
     });
+
+    test('accepts the slugified id form HA actually stores', () {
+      // HA slugifies label names into ids, so a label named "role:overhead"
+      // arrives as "role_overhead".
+      expect(roleOfLabels(['role_overhead']), 'overhead');
+      expect(roleOfLabels(['Role_Ambient']), 'ambient');
+      expect(roleOfLabels(['role_']), isNull);
+      // A label that merely starts with "role" is not a role label.
+      expect(roleOfLabels(['roles']), isNull);
+    });
   });
 
   group('lighting candidates', () {

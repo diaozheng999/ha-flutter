@@ -20,10 +20,15 @@ import 'package:ha_flutter/ha/models/room_lighting.dart';
 typedef StateLookup = EntityState Function(String entityId);
 
 /// The lighting role declared by an entity's labels, or null when unlabelled.
+///
+/// Matching is case-insensitive and accepts either separator, because the
+/// registry reports slugified label ids (see [roleLabelPrefixes]).
 String? roleOfLabels(List<String> labels) {
   for (final l in labels) {
-    if (l.startsWith(roleLabelPrefix)) {
-      final role = l.substring(roleLabelPrefix.length).trim();
+    final lower = l.toLowerCase();
+    for (final prefix in roleLabelPrefixes) {
+      if (!lower.startsWith(prefix)) continue;
+      final role = lower.substring(prefix.length).trim();
       if (role.isNotEmpty) return role;
     }
   }

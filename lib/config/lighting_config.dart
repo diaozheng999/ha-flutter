@@ -4,7 +4,15 @@
 // only supplies the *presentation* of roles (which layers render and in what
 // order) and the quantised ranges HA has no way to advertise.
 
-/// Label prefix that marks a lighting-role label, e.g. `role:overhead`.
+/// Prefixes that mark a lighting-role label.
+///
+/// The entity registry reports label **ids**, and Home Assistant slugifies label
+/// names into ids (the existing "Matterbridge" label has id `matterbridge`), so a
+/// label named `role:overhead` arrives as `role_overhead`. Both separators are
+/// accepted so the convention works however the label was named.
+const roleLabelPrefixes = <String>['role:', 'role_'];
+
+/// The canonical prefix to show users when documenting the convention.
 const roleLabelPrefix = 'role:';
 
 /// Default ordered role taxonomy. Rooms without an override render these layers

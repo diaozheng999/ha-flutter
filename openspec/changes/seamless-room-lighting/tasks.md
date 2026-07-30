@@ -112,8 +112,8 @@ comfort). Each phase is independently shippable; groups are dependency-ordered.
 
 ## 9. HA data-hygiene recommendations (surfaced to user; not app code)
 
-- [ ] 9.1 Recommend assigning `area_id` to area-less group entities
+- [x] 9.1 Recommend assigning `area_id` to area-less group entities
       (`kitchen_spotlights`, `dining_table_lights`, `entry_lights`, `pantry_lights`)
-- [ ] 9.2 Recommend applying `role:<name>` labels per fixture to populate layers
-- [ ] 9.3 Note the drifting `scene.all_off` (incomplete + captures non-light config
+- [x] 9.2 Recommend applying `role:<name>` labels per fixture to populate layers
+- [x] 9.3 Note the drifting `scene.all_off` (incomplete + captures non-light config
       entities) as a latent footgun the app deliberately does not reuse

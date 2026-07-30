@@ -441,3 +441,55 @@
 - **Handoff note:** Rooms are keyed by HA `area_id`, so the expected ids are
   `scene.living_room_comfort`, `scene.kitchen_comfort`, `scene.bedroom_comfort`,
   `scene.study_comfort`, `scene.entrance_comfort`, `scene.pantry_comfort`.
+
+### D26 - Role labels matched against slugified ids, both separators accepted (2026-07-12)
+
+- **Decision:** `roleOfLabels` matches `role:` **and** `role_` prefixes,
+  case-insensitively, against the label values from the entity registry.
+- **Why:** Caught while verifying against live HA. The registry's `labels` field
+  carries label **ids**, not names, and HA slugifies names into ids — the one
+  existing label is named "Matterbridge" with id `matterbridge`. A label the user
+  names `role:overhead` will therefore almost certainly arrive as
+  `role_overhead`, and the original `role:`-only prefix (D14) would never have
+  matched a single real label. Accepting both makes the convention work however
+  the label is named, without the app depending on HA's exact slug rules.
+- **Alternatives considered:** Switching to `role_` only (rejected — brittle in
+  the other direction if HA ever preserves colons, and `role:` is the nicer
+  documented form); creating a test label in HA to confirm slug behaviour
+  (rejected — that is a persistent config change in the user's instance and needs
+  their say-so, and tolerant matching makes the question moot).
+- **Status:** Implemented, covered by tests for both forms.
+- **Handoff note:** Verified 2026-07-12 that the instance currently has exactly
+  **one** label (`matterbridge`) and **no** role labels, so every room will render
+  via the implicit single-layer fallback until labels are applied. The fallback is
+  therefore load-bearing on day one, not a rare edge case.
+
+### D27 - Verification status: automated complete, live walkthrough blocked (2026-07-12)
+
+- **Done:** `flutter analyze` clean (3 pre-existing `directives_ordering` infos in
+  files this change does not touch). `flutter build windows --debug` succeeds.
+  46 tests pass: `lighting_resolver_test.dart` (21 — role/slug parsing, candidate
+  selection, capability rungs, area-less rescue, de-tangle, claimed-member,
+  template opacity, switch fixture, role order + override, implicit fallback),
+  `capability_light_control_test.dart` (7 — one per ladder rung plus stepped temp,
+  expression disclosure, unavailable), `control_scheme_render_test.dart` (now
+  exercising `CapabilityLightControl`), `device_control_descriptor_test.dart`.
+- **Blocked (tasks 8.3, 8.4):** the live breakpoint walkthrough and the
+  real-fixture render check. The built exe launches but the HA WebSocket cannot
+  authenticate in this environment — the log shows only backoff
+  ("HA WS reconnecting in 1s … 60s"), so no room data renders and there is nothing
+  to observe. Same constraint the previous change recorded (its D25): the app
+  authenticates through its own OAuth flow and no session is available here.
+- **Pre-existing broken tests (not touched):** `room_alerts_test.dart`,
+  `room_sections_test.dart`, `widget_test.dart` still fail to compile against the
+  removed static-rooms API. Verified pre-existing — the symbols they reference
+  (`HaEntities.roomById`, `HaEntities.rooms`) do not exist at this change's base
+  commit either.
+- **Status:** Automated verification complete; 8.3/8.4 deferred to a user-run
+  session against logged-in HA.
+- **Handoff note:** On first logged-in run, check the debug line
+  `[RoomRegistry] registry fields: N/M entities have labels, K have platform` — it
+  settles D20's one unverified assumption (that the WS entity registry carries
+  `labels` and `platform`). If labels report 0/M, role layers cannot populate and
+  the registry fetch needs to change, though the implicit fallback keeps the
+  screen working either way.
