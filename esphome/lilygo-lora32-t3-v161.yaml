@@ -1,0 +1,29 @@
+esphome:
+  name: lilygo-lora32-t3-v161
+  friendly_name: LilyGo LoRa32 T3 v1.6.1
+
+esp32:
+  board: esp32dev
+  toolchain: esp-idf
+  framework:
+    type: esp-idf
+
+logger:
+
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  ap:
+    ssid: LilyGo T3 v1.6.1 Fallback
+    password: !secret fallback_ap_password
+
+captive_portal:
