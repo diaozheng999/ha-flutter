@@ -1,6 +1,11 @@
 esphome:
   name: lilygo-lora32-t3-v161
   friendly_name: LilyGo LoRa32 T3 v1.6.1
+  includes:
+    # ESPHome prepends angle-bracket includes before custom global types;
+    # the local-path entry also copies the header into the generated source.
+    - <rf_event_publication.h>
+    - rf_event_publication.h
 
 esp32:
   board: esp32dev
@@ -11,6 +16,7 @@ esp32:
 logger:
 
 api:
+  id: native_api
   encryption:
     key: !secret api_encryption_key
 
@@ -19,6 +25,7 @@ ota:
     password: !secret ota_password
 
 wifi:
+  id: node_wifi
   ssid: !secret wifi_ssid
   password: !secret wifi_password
 
@@ -27,3 +34,441 @@ wifi:
     password: !secret fallback_ap_password
 
 captive_portal:
+
+# Local diagnostics remain available without reception or network access.
+i2c:
+  sda: GPIO21
+  scl: GPIO22
+
+# D38: both physical remotes decode at 433.92 MHz; D40-D41 confirm Broadlink replays.
+spi:
+  clk_pin: GPIO5
+  miso_pin: GPIO19
+  mosi_pin: GPIO27
+
+sx127x:
+  id: radio
+  cs_pin: GPIO18
+  rst_pin: GPIO23
+  frequency: 433.92MHz
+  modulation: OOK
+  bandwidth: 125_0kHz
+  bitrate: 4800
+  rx_floor: -94
+  bitsync: false
+  packet_mode: false
+  rx_start: true
+
+event:
+  - platform: template
+    id: study_rf_command
+    name: Study RF Command
+    device_class: button
+    event_types: &rf_event_types
+      - fan_off_unmarked
+      - fan_off_broadlink
+      - fan_off_mixed
+      - speed_1_unmarked
+      - speed_1_broadlink
+      - speed_1_mixed
+      - speed_2_unmarked
+      - speed_2_broadlink
+      - speed_2_mixed
+      - speed_3_unmarked
+      - speed_3_broadlink
+      - speed_3_mixed
+      - speed_4_unmarked
+      - speed_4_broadlink
+      - speed_4_mixed
+      - speed_5_unmarked
+      - speed_5_broadlink
+      - speed_5_mixed
+      - fan_fr_unmarked
+      - fan_fr_broadlink
+      - fan_fr_mixed
+      - light_off_unmarked
+      - light_off_broadlink
+      - light_off_mixed
+      - light_warm_unmarked
+      - light_warm_broadlink
+      - light_warm_mixed
+      - light_neutral_unmarked
+      - light_neutral_broadlink
+      - light_neutral_mixed
+      - light_cool_unmarked
+      - light_cool_broadlink
+      - light_cool_mixed
+      - light_brightness_up_unmarked
+      - light_brightness_up_broadlink
+      - light_brightness_up_mixed
+      - light_brightness_down_unmarked
+      - light_brightness_down_broadlink
+      - light_brightness_down_mixed
+  - platform: template
+    id: bedroom_rf_command
+    name: Bedroom RF Command
+    device_class: button
+    event_types: *rf_event_types
+
+globals:
+  - id: rf_publication
+    type: rf_gateway::EventPublication
+    initial_value: 'rf_gateway::EventPublication{}'
+  - id: raw_capture_count
+    type: uint64_t
+    restore_value: false
+    initial_value: '0'
+  - id: last_capture_ms
+    type: uint64_t
+    restore_value: false
+    initial_value: '0'
+  - id: received_room
+    type: const char *
+    restore_value: false
+    initial_value: '"NONE"'
+  - id: received_button
+    type: const char *
+    restore_value: false
+    initial_value: '"NONE"'
+  - id: matched_frame_count
+    type: uint64_t
+    restore_value: false
+    initial_value: '0'
+  - id: last_match_ms
+    type: uint64_t
+    restore_value: false
+    initial_value: '0'
+  - id: decode_status
+    type: const char *
+    restore_value: false
+    initial_value: '"WAITING"'
+  - id: best_decoded_bits
+    type: uint32_t
+    restore_value: false
+    initial_value: '0'
+  - id: last_decoded_word
+    type: uint32_t
+    restore_value: false
+    initial_value: '0'
+  - id: last_input_size
+    type: uint32_t
+    restore_value: false
+    initial_value: '0'
+  - id: event_words
+    type: std::array<uint32_t, 8>
+    initial_value: 'std::array<uint32_t, 8>{}'
+  - id: event_buttons
+    type: std::array<const char *, 8>
+    initial_value: 'std::array<const char *, 8>{}'
+  - id: event_ids
+    type: std::array<uint32_t, 8>
+    initial_value: 'std::array<uint32_t, 8>{}'
+  - id: event_sources
+    type: std::array<uint8_t, 8>
+    initial_value: 'std::array<uint8_t, 8>{}'
+  - id: event_bursts
+    type: std::array<uint32_t, 8>
+    initial_value: 'std::array<uint32_t, 8>{}'
+  - id: event_times
+    type: std::array<uint64_t, 8>
+    initial_value: 'std::array<uint64_t, 8>{}'
+  - id: event_count
+    type: uint32_t
+    initial_value: '0'
+  - id: key_last_event
+    type: std::array<uint32_t, 26>
+    initial_value: 'std::array<uint32_t, 26>{}'
+  - id: key_last_seen
+    type: std::array<uint64_t, 26>
+    initial_value: 'std::array<uint64_t, 26>{}'
+  - id: key_last_burst
+    type: std::array<uint32_t, 26>
+    initial_value: 'std::array<uint32_t, 26>{}'
+  - id: room_last_word
+    type: std::array<uint32_t, 2>
+    initial_value: 'std::array<uint32_t, 2>{}'
+  - id: marker_generation
+    type: uint32_t
+    initial_value: '0'
+  - id: marker_open
+    type: bool
+    initial_value: 'false'
+  - id: marker_first_word
+    type: uint32_t
+    initial_value: '0'
+  - id: marker_mixed
+    type: bool
+    initial_value: 'false'
+  - id: marker_last_command_ms
+    type: uint64_t
+    initial_value: '0'
+  - id: marker_footer_count
+    type: uint32_t
+    initial_value: '0'
+  - id: marker_sync_count
+    type: uint32_t
+    initial_value: '0'
+  - id: marker_best_bits
+    type: uint32_t
+    initial_value: '0'
+
+remote_receiver:
+  id: rf_input
+  pin: GPIO32
+  filter: 50us
+  idle: 4ms
+  buffer_size: 10000b
+  rmt_symbols: 192
+  receive_symbols: 192
+  on_raw:
+    then:
+      - lambda: |-
+          id(raw_capture_count) += 1;
+          id(last_capture_ms) = millis_64();
+          id(last_input_size) = static_cast<uint32_t>(x.size());
+          const uint64_t now_ms = millis_64();
+          // D63: collect recent command events; the footer labels the group.
+          // Sources: 0 unmarked, 1 pending, 2 Broadlink marker, 3 mixed.
+          const auto close_envelope = [&](uint8_t source) {
+            rf_gateway::finalize(id(marker_open), id(marker_generation),
+                                 id(event_bursts), id(event_sources), source);
+            id(rf_publication).flush(id(event_count), id(event_ids), id(event_words),
+                                    id(event_sources), id(native_api).is_connected(),
+                                    [&](uint32_t unit, const std::string &type) {
+              if (unit == 0x21) id(study_rf_command).trigger(type);
+              else id(bedroom_rf_command).trigger(type);
+            });
+          };
+          if (id(marker_open) && now_ms - id(marker_last_command_ms) >= 300)
+            close_envelope(0);
+          if (id(matched_frame_count) == 0) {
+            id(received_room) = "UNKNOWN";
+            id(received_button) = "UNKNOWN";
+          }
+          id(decode_status) = x.size() < 59 ? "SHORT" : "NO FRAME";
+          id(best_decoded_bits) = 0;
+          id(last_decoded_word) = 0;
+
+          // Existing Broadlink codebook: 8-bit unit ID + 21-bit command.
+          // Decode live input in memory; do not record or dump RF timings.
+          const auto is_short = [](int64_t us) { return us >= 150 && us <= 600; };
+          const auto is_long = [](int64_t us) { return us >= 800 && us <= 1500; };
+          for (size_t start = 0; start < x.size(); start++) {
+            const int64_t polarity = x[start] > 0 ? 1 : -1;
+            if (x[start] == 0) continue;
+            // Locate the footer's sync space; require the full strict marker.
+            {
+              const auto near = [](int64_t value, int64_t low, int64_t high) {
+                return value >= low && value <= high;
+              };
+              const int64_t marker_polarity = -polarity;
+              const bool sync_space = near(-marker_polarity * x[start], 500, 720);
+              const bool full_sync = start > 0 &&
+                                     near(marker_polarity * x[start - 1], 500, 720);
+              bool marker_valid = sync_space && full_sync;
+              uint8_t marker = 0;
+              uint32_t marker_bits = 0;
+              for (size_t bit = 0; marker_valid && bit < 8; ++bit) {
+                if (start + 2 + bit * 2 >= x.size()) {
+                  marker_valid = false;
+                  break;
+                }
+                const int64_t mark = marker_polarity * x[start + 1 + bit * 2];
+                const int64_t space = -marker_polarity * x[start + 2 + bit * 2];
+                const bool zero = near(mark, 85, 165) && near(space, 280, 450);
+                const bool one = near(mark, 280, 450) && near(space, 85, 165);
+                marker_valid = zero || one;
+                marker = static_cast<uint8_t>((marker << 1) | static_cast<uint8_t>(one));
+                if (marker_valid) marker_bits++;
+              }
+              if (sync_space && full_sync) id(marker_sync_count)++;
+              if (marker_bits > id(marker_best_bits)) id(marker_best_bits) = marker_bits;
+              marker_valid = marker_valid && start + 19 <= x.size() &&
+                             near(marker_polarity * x[start + 17], 85, 165) &&
+                             marker_polarity * x[start + 18] <= -3000;
+              marker_valid = marker_valid &&
+                             (start <= 1 || marker_polarity * x[start - 2] <= -3000);
+              if (marker_valid && marker == 0x5A) {
+                id(marker_footer_count)++;
+                if (id(marker_open)) close_envelope(id(marker_mixed) ? 3 : 2);
+                id(decode_status) = "FOOTER";
+                start += 17;
+                continue;
+              }
+            }
+            if (start != 0 && polarity * x[start - 1] > -3000) continue;
+            if (start + 59 > x.size()) continue;
+            uint32_t word = 0;
+            bool valid = true;
+            uint32_t decoded_bits = 0;
+            for (size_t bit = 0; bit < 29; bit++) {
+              const int64_t mark = polarity * x[start + bit * 2];
+              const int64_t space = -polarity * x[start + bit * 2 + 1];
+              if (is_short(mark) && is_long(space)) {
+                word <<= 1;
+              } else if (is_long(mark) && is_short(space)) {
+                word = (word << 1) | 1;
+              } else {
+                valid = false;
+                break;
+              }
+              decoded_bits++;
+            }
+            if (decoded_bits >= id(best_decoded_bits)) {
+              id(best_decoded_bits) = decoded_bits;
+              id(last_decoded_word) = word;
+              if (strcmp(id(decode_status), "MATCH") != 0)
+                id(decode_status) = valid ? "FRAMING" : "TIMING";
+            }
+            // Stored frames end in either timing cluster before the gap.
+            const int64_t terminal = polarity * x[start + 58];
+            if (!valid || !(is_short(terminal) || is_long(terminal)))
+              continue;
+            if (start + 59 < x.size() && polarity * x[start + 59] > -3000)
+              continue;
+
+            if (strcmp(id(decode_status), "MATCH") != 0)
+              id(decode_status) = "CODE";
+
+            const uint32_t unit = word >> 21;
+            const char *room = unit == 0x21 ? "STUDY" : (unit == 0xCB ? "BEDROOM" : nullptr);
+            if (room == nullptr)
+              continue;
+            const char *button = nullptr;
+            size_t command_index = 0;
+            switch (word & 0x1FFFFF) {
+              case 0x16E50B: button = "FAN OFF"; command_index = 0; break;
+              case 0x16E5A9: button = "SPEED 1"; command_index = 1; break;
+              case 0x16E589: button = "SPEED 2"; command_index = 2; break;
+              case 0x16E56A: button = "SPEED 3"; command_index = 3; break;
+              case 0x16E54A: button = "SPEED 4"; command_index = 4; break;
+              case 0x16E5E8: button = "SPEED 5"; command_index = 5; break;
+              case 0x16E5C8: button = "DIRECTION"; command_index = 6; break;
+              case 0x16E591: button = "LIGHT OFF"; command_index = 7; break;
+              case 0x16E5B1: button = "LIGHT NEUTRAL"; command_index = 8; break;
+              case 0x16E572: button = "LIGHT WARM"; command_index = 9; break;
+              case 0x16E5D0: button = "LIGHT COOL"; command_index = 10; break;
+              case 0x16E533: button = "BRIGHTNESS UP"; command_index = 11; break;
+              case 0x16E4F4: button = "BRIGHTNESS DOWN"; command_index = 12; break;
+            }
+            if (button != nullptr) {
+              id(received_room) = room;
+              id(received_button) = button;
+              id(matched_frame_count)++;
+              id(last_match_ms) = millis_64();
+              id(decode_status) = "MATCH";
+              const size_t room_index = unit == 0x21 ? 0 : 1;
+              const size_t key = room_index * 13 + command_index;
+              if (!id(marker_open)) {
+                if (++id(marker_generation) == 0) ++id(marker_generation);
+                id(marker_open) = true;
+                id(marker_first_word) = word;
+                id(marker_mixed) = false;
+              }
+              id(marker_last_command_ms) = now_ms;
+              if (id(marker_first_word) != word) id(marker_mixed) = true;
+              const uint32_t burst = id(marker_generation);
+              const bool new_event = id(key_last_event)[key] == 0 ||
+                                     id(key_last_burst)[key] != burst ||
+                                     now_ms - id(key_last_seen)[key] >= 300 ||
+                                     id(room_last_word)[room_index] != word;
+              id(room_last_word)[room_index] = word;
+              id(key_last_seen)[key] = now_ms;
+              id(key_last_burst)[key] = burst;
+              if (new_event) {
+                if (++id(event_count) == 0) {
+                  id(event_count) = 1;
+                  id(key_last_event).fill(0);
+                  id(event_ids).fill(0);
+                }
+                const size_t slot = (id(event_count) - 1) % 8;
+                id(event_ids)[slot] = id(event_count);
+                id(event_words)[slot] = word;
+                id(event_buttons)[slot] = button;
+                id(event_sources)[slot] = 1;
+                id(event_bursts)[slot] = burst;
+                id(event_times)[slot] = now_ms;
+                id(key_last_event)[key] = id(event_count);
+                id(rf_publication).begin(slot, id(event_count), id(native_api).is_connected());
+              }
+            }
+          }
+
+font:
+  - file: "gfonts://Roboto Mono"
+    id: status_font
+    size: 12
+    bpp: 1
+    glyphs: " 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ:?"
+
+display:
+  - platform: ssd1306_i2c
+    id: status_display
+    model: "SSD1306 128x64"
+    address: 0x3C
+    update_interval: 1s
+    lambda: |-
+      const uint64_t now_ms = millis_64();
+      const uint64_t uptime_seconds = now_ms / 1000;
+
+      const bool receiver_failed = id(radio).is_failed() || id(rf_input).is_failed();
+      const bool receiver_ready = id(radio).is_ready() && id(rf_input).is_ready();
+      // Larger text on two alternating pages. Both recent events share one
+      // page; the marker page uses words so zero cannot be mistaken for eight.
+      if (!receiver_failed && receiver_ready && (uptime_seconds / 5) % 2 == 0) {
+        for (uint32_t row = 0; row < 2; ++row) {
+          const int y = -3 + static_cast<int>(row) * 26;
+          if (id(event_count) <= row) {
+            it.print(0, y, id(status_font), row == 0 ? "EVENT: NONE" : "PREV: NONE");
+            continue;
+          }
+          const size_t slot = (id(event_count) - 1 - row) % 8;
+          const char *room = (id(event_words)[slot] >> 21) == 0x21 ? "STUDY" : "BEDROOM";
+          const uint8_t source = id(event_sources)[slot];
+          const char *label = source == 2 ? "BL" : (source == 3 ? "MIX" : "?");
+          it.printf(0, y, id(status_font), "E%03u %s %s",
+                    static_cast<unsigned>(id(event_ids)[slot] % 1000), room, label);
+          it.print(0, y + 13, id(status_font), id(event_buttons)[slot]);
+        }
+        it.printf(0, 49, id(status_font), "RAW %u EV %u",
+                  static_cast<unsigned>(id(raw_capture_count) % 10000),
+                  static_cast<unsigned>(id(event_count) % 10000));
+      } else {
+        it.printf(0, -3, id(status_font), "FOOTER %s", id(marker_footer_count) ? "YES" : "NO");
+        const char *last_source = "NONE";
+        if (id(event_count)) {
+          const uint8_t source = id(event_sources)[(id(event_count) - 1) % 8];
+          last_source = source == 2 ? "BL" : (source == 3 ? "MIX" : "UNKNOWN");
+        }
+        it.printf(0, 10, id(status_font), "SOURCE %s", last_source);
+        const char *bit_labels[] = {"NONE", "1", "2", "3", "4", "5", "6", "7", "FULL"};
+        it.printf(0, 23, id(status_font), "SYNC %s BITS %s",
+                  id(marker_sync_count) ? "YES" : "NO", bit_labels[id(marker_best_bits)]);
+        it.printf(0, 36, id(status_font), "RX %s UP %u",
+                  receiver_failed ? "ERROR" : (!receiver_ready ? "STARTING" : id(decode_status)),
+                  static_cast<unsigned>(uptime_seconds % 1000));
+        it.printf(0, 49, id(status_font), "WIFI %s API %s",
+                  id(node_wifi).is_connected() ? "UP" : "DOWN",
+                  id(native_api).is_connected() ? "UP" : "DOWN");
+      }
+      if ((uptime_seconds % 2) == 0) {
+        it.filled_circle(122, 5, 3);
+      } else {
+        it.circle(122, 5, 3);
+      }
+
+interval:
+  - interval: 50ms
+    then:
+      - lambda: |-
+          // RF_PUBLICATION_TICK_BEGIN
+          if (id(marker_open) && millis_64() - id(marker_last_command_ms) >= 300)
+            rf_gateway::finalize(id(marker_open), id(marker_generation),
+                                 id(event_bursts), id(event_sources), 0);
+          id(rf_publication).flush(id(event_count), id(event_ids), id(event_words),
+                                  id(event_sources), id(native_api).is_connected(),
+                                  [&](uint32_t unit, const std::string &type) {
+            if (unit == 0x21) id(study_rf_command).trigger(type);
+            else id(bedroom_rf_command).trigger(type);
+          });
+          // RF_PUBLICATION_TICK_END

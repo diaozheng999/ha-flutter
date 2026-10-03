@@ -1,0 +1,11 @@
+{
+  "skills": ["validate"],
+  "query": "Validate the change 'seeded-fixture'",
+  "setup": "Copy an existing coherent OpenSpec change to openspec/changes/seeded-fixture/. Edit its design.md so one decision states the opposite of what the delta spec requires for the same behaviour (e.g. design says a control renders below a selector, spec says above).",
+  "expected_behavior": [
+    "Reports the seeded disagreement as a single finding at severity Blocker (two artifacts give contradictory instructions for the same thing)",
+    "The finding names both files with heading or line locations and quotes/paraphrases both sides of the disagreement",
+    "Verdict line reads 'Not ready' and counts the blocker",
+    "Does not edit any artifact"
+  ]
+}
