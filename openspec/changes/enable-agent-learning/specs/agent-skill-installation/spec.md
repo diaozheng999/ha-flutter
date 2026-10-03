@@ -26,13 +26,13 @@ The Windows and Linux/macOS setup scripts MUST perform skill restoration, reposi
 - **WHEN** setup reaches verification
 - **THEN** setup exits unsuccessfully and the installer workflow reports the skill as not installed
 
-### Requirement: Setup restores the lockfile through the stable command
-Both setup scripts MUST run `npx skills install` to restore skills declared by `skills-lock.json`. They MUST NOT depend on `experimental_install` for the supported restore path.
+### Requirement: Setup restores the lockfile through the supported command
+Both setup scripts MUST run `npx skills experimental_install` to restore skills declared by `skills-lock.json` with locked `skills` 1.5.10. They MUST NOT invoke the unavailable `npx skills install` command.
 
 #### Scenario: Fresh checkout restores external skills
 - **GIVEN** a fresh checkout contains `skills-lock.json` and no generated agent directories
 - **WHEN** setup runs the skill restore phase
-- **THEN** every restorable locked external skill is materialised through `npx skills install`
+- **THEN** every restorable locked external skill is materialised through `npx skills experimental_install`
 
 ### Requirement: Setup reconciles tracked local skills without wildcard discovery
 After lockfile restoration, setup MUST enumerate immediate directories under `skills/` and invoke `npx skills add . --skill <name> --yes` once for each valid name. It MUST NOT use root-source `--skill '*'` and MUST NOT contain a hard-coded list of repository-owned skill names.
@@ -62,7 +62,7 @@ After reconciliation, setup MUST normalize every verified repository-owned lock 
 
 #### Scenario: Another checkout restores local skills
 - **GIVEN** a fresh checkout contains portable local entries with `source: "."`
-- **WHEN** `npx skills install` runs from that checkout root
+- **WHEN** `npx skills experimental_install` runs from that checkout root
 - **THEN** it resolves the current checkout and restores the declared local skills without referring to the path of the machine that committed the lockfile
 
 ### Requirement: External skills are deliberately registered before setup
@@ -79,7 +79,7 @@ The `install-project-skill` workflow MUST use `npx skills add <source> --skill <
 - **THEN** the installer workflow does not report the external skill as successfully adopted by the repository
 
 ### Requirement: Every declared skill is verified canonically
-After reconciliation, setup MUST verify that every skill named by `skills-lock.json` and every valid immediate `skills/<name>` source has a corresponding `.agents/skills/<name>/SKILL.md`. Missing canonical output for a local or external skill MUST fail setup even when `npx skills install` returned success.
+After reconciliation, setup MUST verify that every skill named by `skills-lock.json` and every valid immediate `skills/<name>` source has a corresponding `.agents/skills/<name>/SKILL.md`. Missing canonical output for a local or external skill MUST fail setup even when `npx skills experimental_install` returned success.
 
 #### Scenario: All declared skills are present
 - **GIVEN** setup has reconciled every lockfile and repository-owned skill

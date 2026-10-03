@@ -71,19 +71,37 @@
       "source": "mattpocock/skills",
       "sourceType": "github",
       "skillPath": "skills/productivity/grill-me/SKILL.md",
-      "computedHash": "67e31b63e6e9e454cc2f51cd85b9cf1396ee46379a87c07a1450f33c47c1276a"
+      "computedHash": "7edd436132b43ea2973710f0c28a9879c9b0910651eb89a991a7e98cb6dbbacb"
     },
     "grilling": {
       "source": "mattpocock/skills",
       "sourceType": "github",
       "skillPath": "skills/productivity/grilling/SKILL.md",
-      "computedHash": "5e05f3e63506a5c11f7bd202d26a1b38f331ea609bcd0ffd3b84eac9c8ac973a"
+      "computedHash": "ac63b22655a6fa4a59468dda21415b773c0aaf5a7e2e27e2259eaabf02a840bc"
     },
     "home-assistant-best-practices": {
       "source": "homeassistant-ai/skills",
       "sourceType": "github",
       "skillPath": "skills/home-assistant-best-practices/SKILL.md",
       "computedHash": "e694ed2c17dfd58242aa4036f0ad718e44a37e4b229a796d32f9098168ee7a25"
+    },
+    "install-project-skill": {
+      "source": ".",
+      "sourceType": "local",
+      "computedHash": "5d533ccb36414a3efbb463921a2fc0d717cc68821e5dc8aae7868df0f7bd736f",
+      "skillPath": "skills/install-project-skill/SKILL.md"
+    },
+    "learn-from-interaction": {
+      "source": ".",
+      "sourceType": "local",
+      "computedHash": "de08bcdd428aa453afaa02e626e86720074fee4aa5715841723e1751ab4a56c1",
+      "skillPath": "skills/learn-from-interaction/SKILL.md"
+    },
+    "validate": {
+      "source": ".",
+      "sourceType": "local",
+      "computedHash": "3f2ab1b2fa78d5c891f97f3ffc660ba07ef95f78171c8b55f90a4f31e7718d3b",
+      "skillPath": "skills/validate/SKILL.md"
     }
   }
 }

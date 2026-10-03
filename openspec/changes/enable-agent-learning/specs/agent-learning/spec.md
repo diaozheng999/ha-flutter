@@ -71,7 +71,7 @@ The primary agent MUST present the proposed candidate content for human review b
 - **THEN** the target artifact remains unchanged until the user separately approves the promotion
 
 ### Requirement: Learning records use stable filenames and provenance
-Each learning record MUST use `agent-learnings/YYYY-MM-DD-HHmmssZ-short-slug.md` with a UTC, second-resolution timestamp. Its frontmatter MUST include `status`, `observed_at`, `coding_agent`, and `session_id`, plus the exact surfaced `model` identifier for agents other than Pi. Unavailable exposed values MUST be recorded as `unavailable`; Pi records MUST omit `model`.
+Each learning record MUST use `agent-learnings/YYYY-MM-DD-HHmmssZ-short-slug.md` with a UTC, second-resolution timestamp. Its frontmatter MUST include `status`, `observed_at`, `coding_agent`, `model`, and `session_id`. The `model` value MUST be the exact surfaced model identifier when available. Unavailable exposed values MUST be recorded as `unavailable`, and no provenance value may be inferred.
 
 #### Scenario: Fully exposed metadata is recorded
 - **GIVEN** the coding agent exposes its exact agent name, model variant, session ID, and observation time
@@ -79,14 +79,32 @@ Each learning record MUST use `agent-learnings/YYYY-MM-DD-HHmmssZ-short-slug.md`
 - **THEN** the filename and frontmatter contain those exact values in the required format
 
 #### Scenario: Metadata is unavailable
-- **GIVEN** a non-Pi agent does not expose its model or session ID
+- **GIVEN** an agent does not expose its model or session ID
 - **WHEN** an approved candidate file is created
 - **THEN** the corresponding value is `unavailable` and no value is inferred
 
 #### Scenario: Pi creates a record
-- **GIVEN** Pi creates an approved candidate file
+- **GIVEN** trusted project-local Pi exposes its current model and session through the runtime identity extension
 - **WHEN** it writes the provenance frontmatter
-- **THEN** it records `coding_agent: pi` and the session ID but omits the `model` field
+- **THEN** it records `coding_agent: pi`, the exact surfaced `model`, and the exact session ID
+
+### Requirement: Pi receives allowlisted runtime identity
+The repository MUST track `.pi/extensions/runtime-context.ts` as a project-local Pi extension while continuing to ignore other `.pi/` state. On every `before_agent_start`, the extension MUST append JSON-encoded runtime identity containing only `coding_agent`, `provider`, `model`, `session_id`, `mode`, `working_directory`, and `observed_at`. It MUST read the current model and session for that turn, use `unavailable` when the provider or model is absent, and MUST NOT expose API keys, model-registry state, or other credentials. Automatic project-local discovery requires Pi project trust.
+
+#### Scenario: Pi receives current model identity
+- **GIVEN** the project is trusted and Pi has selected a model
+- **WHEN** Pi starts an agent turn
+- **THEN** the system prompt contains the exact current provider, model identifier, session ID, run mode, working directory, and UTC observation time supplied by the extension
+
+#### Scenario: Pi model metadata is absent
+- **GIVEN** Pi starts a turn but its extension context has no selected model
+- **WHEN** the runtime identity is built
+- **THEN** `provider` and `model` are `unavailable` and no replacement value is inferred
+
+#### Scenario: Untrusted project does not execute the extension
+- **GIVEN** Pi has not trusted the project-local resources
+- **WHEN** Pi starts without an explicit extension override
+- **THEN** the runtime identity extension is not assumed to have loaded and provenance falls back to exposed values or `unavailable`
 
 ### Requirement: Learning records preserve assessment evidence
 Each learning record MUST contain the observation, evidence, five-whys attempt, confidence and unknowns, proposed generalisation, counterexamples, existing-guidance check, recommendation, human review outcome, and links to related occurrences or promoted guidance when they exist.
