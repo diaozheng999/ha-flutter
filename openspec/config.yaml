@@ -7,6 +7,9 @@ context: |
   Backend: Home Assistant REST API and WebSocket
   State management: TBD
   Architecture: TBD
+  Handoffs: Read decisions.md first and follow AGENTS.md's automatic correction rules.
+  Before declaring data unavailable or asking for repeated work, inspect related predecessor results.
+  Apply user corrections immediately and preserve reusable findings and source/access paths without waiting for a learning request.
 
 rules:
   proposal:

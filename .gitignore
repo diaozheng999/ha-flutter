@@ -64,3 +64,11 @@ migrate_working_dir/
 
 # Node / OpenSpec local install
 node_modules/
+
+# ESPHome local state and sensitive artifacts
+/esphome/secrets.yaml
+/esphome/.esphome/
+/esphome/backups/
+/esphome/*.bin
+/esphome/*.elf
+/esphome/*.map

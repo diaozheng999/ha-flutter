@@ -15,6 +15,11 @@ class RoomOverride {
   /// safety / battery / problem sensors are auto-discovered from HA.
   final List<AlertRule> alertRules;
 
+  /// Ordered lighting-role layers for this room. Null uses the default role
+  /// order from `lighting_config.dart`; roles found on labels but absent from
+  /// the list are appended after it.
+  final List<String>? lightingRoles;
+
   /// Environment sensor entity ids shown in the sidebar / header.
   /// Used until auto-detection from device classes is implemented.
   final String? temperatureSensor;
@@ -26,6 +31,7 @@ class RoomOverride {
     this.sortOrder = 999,
     this.adaptiveLightingSwitch,
     this.alertRules = const [],
+    this.lightingRoles,
     this.temperatureSensor,
     this.humiditySensor,
     this.illuminanceSensor,

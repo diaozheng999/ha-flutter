@@ -8,12 +8,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ha_flutter/ha/ha_providers.dart';
 import 'package:ha_flutter/ha/models/entity_state.dart';
+import 'package:ha_flutter/ha/models/light_capabilities.dart';
 import 'package:ha_flutter/ha/models/room_device.dart';
+import 'package:ha_flutter/ha/models/room_lighting.dart';
 import 'package:ha_flutter/shared/theme/app_theme.dart';
 import 'package:ha_flutter/shared/widgets/ac_thermostat_widget.dart';
 import 'package:ha_flutter/shared/widgets/air_purifier_widget.dart';
+import 'package:ha_flutter/shared/widgets/capability_light_control.dart';
 import 'package:ha_flutter/shared/widgets/fan_speed_dial.dart';
-import 'package:ha_flutter/shared/widgets/light_toggle_widget.dart';
 import 'package:ha_flutter/shared/widgets/power_toggle.dart';
 import 'package:ha_flutter/shared/widgets/quick_control_tile.dart';
 import 'package:ha_flutter/shared/widgets/reading_pill.dart';
@@ -156,8 +158,14 @@ void main() {
       states: {
         'light.group': _s('light.group', 'off'),
       },
-      child: const LightToggleWidget(
-          entityId: 'light.group', name: 'All lights'),
+      child: const CapabilityLightControl(
+        fixture: LightingFixture(
+          entityId: 'light.group',
+          name: 'All lights',
+          capabilities: LightCapabilities(rungs: {LightRung.onOff}),
+          isGroup: true,
+        ),
+      ),
     );
 
     expect(find.text('Off'), findsOneWidget);

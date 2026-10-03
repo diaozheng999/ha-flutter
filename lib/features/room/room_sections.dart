@@ -27,7 +27,10 @@ List<RoomSection> availableSections(RoomConfig room,
     {required bool mediaActive}) {
   return [
     if (room.climateDevices.isNotEmpty) RoomSection.climate,
-    if (room.allLights.isNotEmpty) RoomSection.lights,
+    // Resolved lighting covers fixtures the device scan misses — area-less
+    // group helpers and role-labelled wall switches.
+    if (!room.lighting.isEmpty || room.allLights.isNotEmpty)
+      RoomSection.lights,
     if (room.mediaPlayer != null && mediaActive) RoomSection.media,
   ];
 }
@@ -50,14 +53,13 @@ RoomDevice? _deviceOfRole(RoomConfig room, DeviceRole role, {bool? group}) =>
 String sectionStatusLine(WidgetRef ref, RoomConfig room, RoomSection section) {
   switch (section) {
     case RoomSection.lights:
-      final group = _deviceOfRole(room, DeviceRole.light, group: true);
-      if (group != null) {
-        return DeviceControlDescriptor.describe(ref, group,
-                roomLights: room.individualLights)
-            .statusLine;
-      }
-      // No group entity — count individuals directly.
-      final onCount = room.individualLights
+      // Counted over resolved lighting so the nav status matches what the
+      // section renders, including switch fixtures and rescued groups.
+      final fixtures = room.lighting.isEmpty
+          ? room.allLights
+          : room.lighting.allFixtureIds;
+      if (fixtures.isEmpty) return 'Off';
+      final onCount = fixtures
           .where((id) =>
               ref.watch(entityStateProvider(id)).valueOrNull?.isOn ?? false)
           .length;
