@@ -45,7 +45,11 @@ migrate_working_dir/
 .agents/
 .claude/
 .cursor/
-.pi/
+# Pi runtime state remains ignored except for the reviewed project extension.
+.pi/*
+!.pi/extensions/
+.pi/extensions/*
+!.pi/extensions/runtime-context.ts
 .opencode/
 .cline/
 .continue/

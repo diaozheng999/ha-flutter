@@ -228,3 +228,156 @@
 - **Alternatives considered:** Rely on an incidental network outage; rejected because the result is nondeterministic. Mock the entire `skills` CLI; rejected because it would not exercise the pinned CLI's actual per-source error handling.
 - **Status:** Decided
 - **Handoff note:** Keep the fixture isolated to a disposable checkout and use a clearly nonexistent source and skill name so tracked lock state is never polluted.
+
+### D28 - Preserve validate wording while repairing YAML syntax (2026-07-12)
+
+- **Decision:** Quote the existing `validate` frontmatter description without changing its text or procedural body.
+- **Why:** After relocation, `npx skills add . --list` skipped `validate` because the current CLI's YAML parser rejects the unquoted `Read-only:` substring. Quoting the scalar makes the existing metadata valid while preserving behavior.
+- **Alternatives considered:** Rewrite or shorten the description; rejected because task 1.3 requires preserving validated behavior. Leave it invalid and special-case discovery; rejected because every repository-owned skill must pass the shared CLI path.
+- **Status:** Decided
+- **Handoff note:** Treat this as a syntax repair only; the skill's triggers and read-only contract remain unchanged.
+
+### D29 - Give setup one validated skill-inventory interface (2026-07-12)
+
+- **Decision:** Implement the Node helper with `local`, `normalize`, and `expected` commands. `local` emits validated tracked names, `normalize` repairs and validates local lock entries, and `expected` emits the union of locked and tracked names.
+- **Why:** Both setup scripts need the same three boundaries at different phases. A shared command interface prevents PowerShell and Bash from independently parsing skill frontmatter or inferring lock semantics.
+- **Alternatives considered:** Emit one compound JSON document and make each shell parse it; rejected because native JSON handling differs substantially between the two shells. Duplicate enumeration in each setup script; rejected because it would create divergent validation behavior.
+- **Status:** Decided
+- **Handoff note:** Successful list commands write one skill name per stdout line; diagnostics go to stderr so shell capture remains deterministic.
+
+### D30 - The locked skills CLI has no stable install command (2026-07-12)
+
+- **Decision:** Pause setup implementation rather than silently substitute `experimental_install` for the required `skills install` command.
+- **Why:** The functional Windows setup run with locked `skills` 1.5.10 failed at `npx skills install`; the CLI parsed it as an add invocation and reported a missing source. Its own help lists only `experimental_install` for lockfile restoration. This directly contradicts D18 and the stable-restore requirements.
+- **Alternatives considered:** Revert both scripts to `experimental_install`; technically compatible but violates the current spec, tasks, design, and D18, so it requires an artifact decision first. Add a repository wrapper while continuing to say `npx skills install`; rejected because it would not make that third-party command real. Change or fork the dependency; possible but materially expands scope and needs an explicit choice.
+- **Status:** Blocked pending artifact direction
+- **Handoff note:** Tasks 4.1 and 4.3 were reopened. The first functional setup attempt stopped before local reconciliation and tasks 6.1-6.5 remain unverified.
+
+### D31 - Use the supported experimental lockfile restore command (2026-07-12)
+
+- **Decision:** Use `npx skills experimental_install` in both setup scripts and update the change artifacts to describe it as the supported restore command for locked `skills` 1.5.10.
+- **Why:** The user explicitly selected this resolution after D30 demonstrated that `skills install` does not exist in the locked CLI. Reproducible restoration is more important than retaining an unavailable command name.
+- **Alternatives considered:** Change or fork the CLI to add `install`; rejected by the user choice and unnecessary for the learning capability. Omit lockfile restoration; rejected because external skills must remain reproducible.
+- **Status:** Decided; supersedes D18 and resolves D30
+- **Handoff note:** Keep canonical output verification because `experimental_install` may log a per-source failure without returning a failing exit code.
+
+### D32 - Populate omitted local skill paths during normalization (2026-07-12)
+
+- **Decision:** When a matching `sourceType: "local"` lock entry omits `skillPath`, have the shared helper populate the validated inventory path `skills/<name>/SKILL.md`; continue rejecting any conflicting path.
+- **Why:** Locked `skills` 1.5.10 does not write `skillPath` for local sources because its path mapping is only built for cloned sources. Setup nevertheless requires portable local entries with an explicit expected path, and the validated tracked inventory makes that value deterministic.
+- **Alternatives considered:** Relax the path requirement and leave it absent; rejected because it weakens portable lock validation and contradicts the required postcondition. Patch the third-party CLI; rejected because the repository helper already owns normalization of its local lock output.
+- **Status:** Decided
+- **Handoff note:** Preserve `computedHash` byte-for-byte while adding the path and normalizing the absolute source to `.`.
+
+### D33 - Use a missing node_modules skill for the false-success fixture (2026-07-12)
+
+- **Decision:** Implement D27's disposable missing-output fixture as a clearly nonexistent external `node_modules` skill entry rather than a missing Git repository.
+- **Why:** In `skills` 1.5.10, Git clone and source-parse failures terminate `experimental_install` with exit code 1 before setup can reach canonical verification. The node_modules restore branch catches missing sync inputs and returns success, allowing the required verification failure to be exercised deterministically.
+- **Alternatives considered:** Keep a missing GitHub repository; rejected because it only tests restore exit propagation. Mock the CLI; rejected by D27 because it would not exercise the real locked implementation.
+- **Status:** Decided; refines D27
+- **Handoff note:** The fixture remains disposable and must be absent from both tracked lock state and canonical output.
+
+### D34 - Claude Code and Pi forward-test hosts are unavailable (2026-07-12)
+
+- **Decision:** Run the available Codex forward tests in fresh Codex subagent sessions, but treat the Claude Code and Pi matrix rows as unrun blockers.
+- **Why:** Host discovery finds the Codex application but no `claude` or `pi` executable. D24 and task 7.7 prohibit substituting Codex subagents or simulated labels for those actual hosts.
+- **Alternatives considered:** Simulate Claude Code and Pi with Codex prompts; rejected by D24. Install new host tooling without an explicit repository or user installation workflow; rejected as an unauthorized scope expansion.
+- **Status:** Blocked for Claude Code and Pi host rows; Codex testing continues
+- **Handoff note:** Unrun scenarios are learning cases 7.2-7.3 and installer cases 7.5-7.6. Record exact surfaced metadata for Codex when available; otherwise report it as unavailable rather than infer it.
+
+### D35 - Codex learning forward test passes (2026-07-12)
+
+- **Decision:** Accept the Codex `learn-from-interaction` forward-test result without revising the skill.
+- **Why:** Fresh Codex handling of all seven raw scenarios respected trigger boundaries, performed unanchored independent assessment where warranted, deduplicated existing guidance, avoided promoting inconclusive or conflicting evidence, used unavailable metadata without inference, stopped when delegation was unavailable, and made no repository writes.
+- **Alternatives considered:** Add more prescriptive classification wording; rejected because the observed behavior already matched the specification without anchoring the agent. Treat unavailable model/session metadata as a failure; rejected because the provenance requirement explicitly permits `unavailable` when the host does not expose values.
+- **Status:** Passed on Codex; coding agent `codex`, surfaced model `unavailable`, session ID `unavailable`
+- **Handoff note:** Claude Code and Pi learning rows remain unrun under D34.
+
+### D36 - Align forward-test task metadata with unavailable provenance (2026-07-12)
+
+- **Decision:** Clarify the Codex and Claude Code forward-test tasks to record the exact surfaced model when available and `unavailable` otherwise.
+- **Why:** The repository `validate` audit found that the task wording required an exact model unconditionally, while the agent-learning spec, D7, D24, and D34 explicitly prohibit inference and permit unavailable exposed values.
+- **Alternatives considered:** Treat the Codex result as failed because its model was not exposed; rejected because that would contradict the normative provenance behavior. Infer a model family from the host; rejected by D7.
+- **Status:** Decided
+- **Handoff note:** The wording correction resolves the artifact contradiction; actual Claude Code and Pi host absence remains the implementation blocker.
+
+### D37 - Codex installer forward test passes (2026-07-12)
+
+- **Decision:** Accept the Codex `install-project-skill` forward-test result without revising the skill.
+- **Why:** In a clean disposable checkout, a new local skill used the root source, normalized to `source: "."` with its expected path and hash, survived two byte-identical setup runs, and appeared canonically. A reviewed external re-registration produced no lock diff, and the missing node_modules fixture reached canonical verification and failed naming the absent skill. The workflow correctly withheld external adoption pending exact-source human acceptance.
+- **Alternatives considered:** Treat source-selection approval as approval of the exact reviewed external contents; rejected because the skill intentionally separates source review from selection. Revise around the PowerShell `npx.ps1` policy failure; rejected because repository setup and the successful test use the platform-compatible command path.
+- **Status:** Passed on Codex; coding agent `codex`, exact model variant unavailable, thread `019f55a5-2fb6-7dd0-b401-90a3fe495381`
+- **Handoff note:** The disposable checkout and all its artifacts were safely removed. Claude Code and Pi installer rows remain unrun under D34.
+
+### D38 - Claude Code learning forward test passes (2026-07-12)
+
+- **Decision:** Accept the Claude Code `learn-from-interaction` forward-test result without revising the skill; unblocks the Claude Code learning row (task 7.2) previously blocked under D34.
+- **Why:** A real Claude Code session ran all seven raw learning scenarios. The primary host delegated each triggering observation to a fresh, unanchored subagent that never received an expected diagnosis. Every specified gate and classification held: durable-but-documented signals were deduplicated (S1 skill-source correction, S5 disproved `.mjs` generalisation, S6 setup-root authority), an ungrounded repeated-friction observation was refused rather than canonised (S2 nonexistent `previews.dart`), the inconclusive case stopped the five-whys at the evidence boundary and marked the next cause `unknown` without fabrication (S4 transient linker), the one-off detail never started the workflow (S3 single-build env var), and the constructed no-delegation case halted the learning branch, wrote nothing, and allowed the original task to continue (S7). No repository writes occurred. Fully-exposed provenance recorded exact values (coding agent `claude-code`, model `claude-opus-4-8`, session `87d7cb1f-a792-4ee6-aa87-d2a5eac9675f`); the unavailable-metadata branch was confirmed to write `unavailable` without inference.
+- **Alternatives considered:** Add more prescriptive classification wording; rejected because observed behavior already matched the spec without anchoring the agent. Force a constructed scenario to a promotable candidate to exercise the review gate; rejected because the honest unanchored assessments correctly declined, and the review gate was instead exercised by a genuinely emergent non-normative candidate (a discoverability/timing gap surfaced independently by the S1 and S6 assessors), previewed to the user with no write pending approval.
+- **Status:** Passed on Claude Code; coding agent `claude-code`, model `claude-opus-4-8`, session `87d7cb1f-a792-4ee6-aa87-d2a5eac9675f`. Pi learning row (7.3) remains unrun under D34.
+- **Handoff note:** S3 and S7 are structural gate checks decided at the primary level; S7's no-subagent condition is a legitimate constructed environment constraint, matching how the Pi/Codex hosts must construct that branch. The emergent candidate preview was not written; it awaits the human review gate.
+
+### D39 - Final validation passes (2026-07-19)
+
+- **Decision:** All final validation checks pass; the change is implementation-ready.
+- **Why:**
+  - `npx openspec validate enable-agent-learning` passes (task 8.1).
+  - Tracked local-skill validator (`npx skills add . --list`) discovers all three local skills.
+  - Node helper tests (`project-skills.test.mjs`) all 7 pass.
+  - Both setup scripts pass syntax checks (PowerShell runs, Bash `bash -n` clean).
+  - Setup runs successfully on Windows, produces portable `skills-lock.json` with `source: "."` for all local skills, and verifies all 20 canonical skill outputs.
+  - Second setup run leaves `skills-lock.json` byte-identical (idempotent).
+  - `git diff --check` passes (only CRLF warnings on Windows).
+  - `git status` shows only intended tracked changes: `AGENTS.md`, OpenSpec artifacts, setup scripts, `skills-lock.json`, new `scripts/project-skills.mjs`, `scripts/project-skills.test.mjs`, new `skills/` directory, and removal of legacy `skill/validate/`.
+  - Generated agent directories (`.agents/`, `.codex/`, etc.) and `node_modules/` remain ignored.
+- **Alternatives considered:** None; all validation criteria met.
+- **Status:** Decided
+- **Handoff note:** Tasks 7.3, 7.5, 7.6, 7.8 remain blocked on Pi and Claude Code host availability per D34/D38. The change is complete for the available host (Codex).
+
+### D40 - Pi runtime identity is host-visible but not prompt-visible by default (2026-07-19)
+
+- **Decision:** Treat the unconditional Pi model-omission assumption as unsupported and reopen the change's Pi provenance design. A real Pi 0.80.6 session exposes exact provider, model, and session values in host event metadata, and an allowlisted per-turn extension can make those values available to the model. Keep the extension disposable until its permanent repository placement and the affected artifact supersessions are reviewed.
+- **Why:** Without an extension, Pi's NVIDIA-backed assistant said its provider and model were unavailable even though the same JSON event identified `provider: "nvidia"`, `model: "nvidia/nemotron-3-ultra-550b-a55b"`, and session `019f7933-3d3b-7570-8deb-0c457fe04b54`. An ignored `.pi/extensions/runtime-context.ts` prototype then read `ctx.model`, `ctx.sessionManager.getSessionId()`, `ctx.mode`, and `ctx.cwd` in `before_agent_start`. Explicit loading and trusted project-local auto-discovery each produced a fresh session whose self-report exactly matched the authoritative host metadata. Independent unanchored assessment classified the correction as change-specific and confirmed the result at high confidence.
+- **Alternatives considered:** Preserve Pi's unconditional omission; rejected because it now contradicts direct host and end-to-end evidence. Parse JSON events only outside Pi; rejected because that verifies provenance but does not let Pi use it. Install a global user extension; rejected for now because it is not repository-scoped or reproducible. Track the conventional `.pi/extensions/` source directly or track it elsewhere and have setup reconcile generated output; both remain viable pending a scoped implementation decision.
+- **Status:** Evidence confirmed; permanent artifact and implementation direction pending
+- **Handoff note:** The prototype is ignored evidence, not durable source. Any adopted extension must inject only explicitly allowlisted non-secret fields, retain `unavailable` when `ctx.model` is absent, run per turn so model changes do not go stale, account for Pi project trust, supersede D7's Pi exception, and reconcile the current mismatch where task 7.3 is checked while D39 still calls it blocked.
+
+### D41 - Track a project-local Pi runtime identity extension (2026-07-19)
+
+- **Decision:** Track the validated extension directly at Pi's conventional `.pi/extensions/runtime-context.ts` path, with narrow `.gitignore` exceptions for that file only. On every `before_agent_start`, inject an authoritative, JSON-encoded allowlist containing `coding_agent`, `provider`, `model`, `session_id`, `mode`, `working_directory`, and `observed_at`; use `unavailable` for an absent model or provider and never expose credentials or registry state. Require exact surfaced model metadata for Pi under the same fallback rule as other agents.
+- **Why:** The user approved the direct tracked-path recommendation after D40's explicit-load and trusted auto-discovery tests succeeded. Direct conventional placement gives Pi automatic, project-scoped discovery without a global user installation, setup copy, duplicate source, or stale generated output. Per-turn calculation follows model/session changes, JSON encoding constrains dynamic values, and the allowlist contains the provenance needed by learning records while excluding secrets.
+- **Alternatives considered:** Track the source elsewhere and copy it into ignored `.pi/` from setup; rejected because it duplicates source and adds reconciliation machinery for a file Pi can load directly. Install globally; rejected because it escapes repository scope. Keep the model field optional only for Pi; rejected because the host now exposes an exact identifier and the existing unavailable fallback already covers missing values.
+- **Status:** Decided by explicit user approval; supersedes D7's Pi omission and resolves D40's pending direction
+- **Handoff note:** Update the proposal, agent-learning spec, design, tasks, learning skill/template, `.gitignore`, and `AGENTS.md` provenance/commit guidance. Reopen and rerun Pi learning provenance plus final validation from the durable tracked state; Pi project trust remains an explicit runtime precondition for automatic project-local loading.
+
+### D42 - Tracked Pi runtime identity passes host-metadata verification (2026-07-19)
+
+- **Decision:** Accept the tracked `.pi/extensions/runtime-context.ts` implementation and its exact-model provenance behavior without revision.
+- **Why:** Three Node tests pass for the allowlisted exact values, absent-model fallback, and per-turn `before_agent_start` injection. In a fresh trusted Pi 0.80.6 JSON session, automatic project-local discovery produced coding agent `pi`, provider `nvidia`, model `nvidia/nemotron-3-ultra-550b-a55b`, session `019f7944-1d99-7269-962d-f8a1005c6f48`, mode `json`, the exact working directory, and UTC observation time `2026-07-19T07:25:35.137Z`; strict assertions matched every self-reported value to Pi's authoritative session or assistant event metadata. A matching `--no-extensions` control retained the same host provider/model while the assistant reported both as unavailable, proving the extension supplies otherwise absent prompt context rather than eliciting a guess.
+- **Alternatives considered:** Trust the assistant's self-report without event comparison; rejected because the original failure showed those evidence channels differ. Keep the prototype list format; rejected in favor of JSON encoding and an explicitly testable field allowlist. Add provider secrets or registry details; rejected as unnecessary and unsafe.
+- **Status:** Passed on Pi; exact model and session surfaced
+- **Handoff note:** Automatic discovery requires project trust. The identity extension itself is complete; remaining Pi forward-test work concerns the learning and installer skill scenarios, not runtime provenance transport.
+
+### D43 - Repository-bearing Pi forward tests require explicit disclosure approval (2026-07-19)
+
+- **Decision:** Pause the Pi learning and installer workflow rows rather than work around the environment's data-loss safeguard. Continue only local validation and setup checks until the user explicitly approves sending repository instructions and disposable-checkout contents to the configured external NVIDIA endpoint.
+- **Why:** The first two fresh Pi installer attempts made no changes because Nemotron emitted textual multi-tool JSON instead of native calls, although a repository-free single-command smoke test proved native tool execution works. The proposed safer rerun decomposed the workflow into atomic native-tool turns, but the environment rejected the first repository read because it would transmit private `skills/install-project-skill/SKILL.md` content to Pi's external NVIDIA-backed model. The rejection explicitly prohibits indirect execution or policy circumvention without informed user approval.
+- **Alternatives considered:** Simulate Pi with Codex or another host; rejected by D24. Drive the repository actions locally and label them Pi results; rejected because that would not test Pi instruction following. Switch models silently; rejected because it would not test the user's configured model and would still disclose repository content. Circumvent the safeguard through shell indirection; prohibited and rejected.
+- **Status:** Blocked pending explicit informed approval for repository disclosure to Pi/NVIDIA
+- **Handoff note:** The runtime identity extension remains accepted because its strict tests used only the explicit test prompt and allowlisted metadata. Tasks 7.3, 7.6, and therefore 7.8 cannot complete until disclosure is approved; task 7.5 separately remains blocked because `claude` is absent from the current PowerShell host.
+
+### D44 - Tenant policy blocks repository-bearing Pi verification (2026-07-19)
+
+- **Decision:** Do not retry or indirectly reproduce repository-bearing Pi forward tests in this environment. Keep the Pi learning and installer rows blocked unless a materially safer test is designed or the tenant policy changes.
+- **Why:** After the user agreed to try the informed verification, the first fresh trusted Pi learning run was rejected before execution. The safeguard states that tenant policy forbids sending private repository instructions and workspace contents to the external NVIDIA-backed endpoint even with explicit user approval, and explicitly prohibits workarounds, indirect execution, or policy circumvention. No repository content reached Pi during the rejected attempt.
+- **Alternatives considered:** Retry with different quoting, inline the private skill text, or have a local wrapper feed repository files to Pi; all are equivalent disclosure attempts and explicitly prohibited. Label local Codex execution as Pi verification; rejected by D24. Use only repository-free synthetic metadata prompts; safe but insufficient for tasks 7.3 and 7.6 because it would not test Pi against the tracked skills or disposable repository workflow.
+- **Status:** Blocked by tenant data-loss policy
+- **Handoff note:** The tracked runtime identity result in D42 remains valid because it exposed only the reviewed allowlisted metadata. Tasks 7.3, 7.6, 7.8, 8.2, and 8.3 remain incomplete; task 7.5 remains separately blocked by the absent `claude` executable.
+
+### D45 - Identity-only Pi verification passes under the safe boundary (2026-07-19)
+
+- **Decision:** Accept a fresh identity-only verification as additional confirmation of the tracked runtime extension, without treating it as completion of the repository-bearing Pi skill tests.
+- **Why:** Pi ran in a newly created empty temp directory with context files, skills, prompt templates, themes, built-in tools, and session persistence disabled. The tracked extension was loaded explicitly and supplied only its reviewed runtime allowlist. Pi's authoritative JSON assistant event and its self-report matched exactly on provider `nvidia`, model `nvidia/nemotron-3-ultra-550b-a55b`, session `019f79e8-ddbb-754a-8125-f24722f597bb`, JSON mode, and the temporary working directory; the reported observation time was `2026-07-19T10:25:32.157Z`. The scratch directory was removed after the successful run.
+- **Alternatives considered:** Omit the safe rerun because D42 already passed; rejected because the user explicitly asked to verify the behavior again. Treat the metadata-only result as completing tasks 7.3 or 7.6; rejected because those tasks require the tracked learning and installer skills plus repository workflow context that tenant policy blocks.
+- **Status:** Passed for identity transport only; repository-bearing Pi rows remain blocked
+- **Handoff note:** The exact Pi commit trailer may use `(pi, nvidia/nemotron-3-ultra-550b-a55b)`. Tasks 7.3, 7.6, 7.8, 8.2, and 8.3 remain incomplete under D44.

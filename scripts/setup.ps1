@@ -21,7 +21,7 @@ $Root = Split-Path -Parent $PSScriptRoot
 Write-Host "==> ha-flutter agent setup (Windows)" -ForegroundColor Cyan
 
 # -- 1. Node dependencies -------------------------------------------------------
-Write-Host "`n[1/7] Installing npm devDependencies..." -ForegroundColor Yellow
+Write-Host "`n[1/9] Installing npm devDependencies..." -ForegroundColor Yellow
 Push-Location $Root
 try {
     npm install
@@ -32,23 +32,39 @@ try {
 # -- 2. Global OpenSpec CLI -----------------------------------------------------
 # The generated slash commands/skills invoke bare `openspec`, which must be on
 # PATH. The local devDependency pins the version used by this script via npx.
-Write-Host "`n[2/7] Installing global OpenSpec CLI..." -ForegroundColor Yellow
+Write-Host "`n[2/9] Installing global OpenSpec CLI..." -ForegroundColor Yellow
 npm install -g @fission-ai/openspec@latest
 
 # -- 3. Restore skills from skills-lock.json ------------------------------------
-# Lockfile-driven for reproducibility: `npx skills add` would re-resolve latest.
-# To add a NEW skill: npx skills add <source> --skill <name>, then commit the
-# updated skills-lock.json (see AGENTS.md).
-Write-Host "`n[3/7] Restoring skills from skills-lock.json..." -ForegroundColor Yellow
+# Lockfile-driven for reproducibility. External sources are registered once with
+# `npx skills add <source> --skill <name>` and then restored here.
+Write-Host "`n[3/9] Restoring skills from skills-lock.json..." -ForegroundColor Yellow
 Push-Location $Root
 try {
     npx skills experimental_install
+    if ($LASTEXITCODE -ne 0) { throw "skills experimental_install failed" }
 } finally {
     Pop-Location
 }
 
-# -- 4. OpenSpec init -----------------------------------------------------------
-Write-Host "`n[4/7] Initialising OpenSpec..." -ForegroundColor Yellow
+# -- 4. Reconcile repository-owned skills --------------------------------------
+Write-Host "`n[4/9] Reconciling repository-owned skills..." -ForegroundColor Yellow
+Push-Location $Root
+try {
+    $LocalSkills = @(node scripts/project-skills.mjs local)
+    if ($LASTEXITCODE -ne 0) { throw "local skill inventory failed" }
+    foreach ($SkillName in $LocalSkills) {
+        npx skills add . --skill $SkillName --yes
+        if ($LASTEXITCODE -ne 0) { throw "failed to reconcile local skill '$SkillName'" }
+    }
+    node scripts/project-skills.mjs normalize
+    if ($LASTEXITCODE -ne 0) { throw "local skill lock normalization failed" }
+} finally {
+    Pop-Location
+}
+
+# -- 5. OpenSpec init -----------------------------------------------------------
+Write-Host "`n[5/9] Initialising OpenSpec..." -ForegroundColor Yellow
 if ($Tools -eq "none") {
     Write-Host "  (skipped - Tools=none)" -ForegroundColor DarkGray
 } else {
@@ -76,11 +92,11 @@ if ($Tools -eq "none") {
     }
 }
 
-# -- 5. Bridge OpenSpec commands to universal skills -----------------------------
+# -- 6. Bridge OpenSpec commands to universal skills -----------------------------
 # Moves .claude/commands/opsx/*.md -> .agents/skills/opsx-*/SKILL.md and renames
 # /opsx:xxx -> /opsx-xxx, so agents unsupported by OpenSpec (but reading the
 # universal .agents/skills dir) get the workflow too.
-Write-Host "`n[5/7] Bridging OpenSpec commands to .agents/skills..." -ForegroundColor Yellow
+Write-Host "`n[6/9] Bridging OpenSpec commands to .agents/skills..." -ForegroundColor Yellow
 if ($Tools -eq "none") {
     Write-Host "  (skipped - Tools=none)" -ForegroundColor DarkGray
 } else {
@@ -93,8 +109,8 @@ if ($Tools -eq "none") {
     }
 }
 
-# -- 6. Sanity checks -------------------------------------------------------------
-Write-Host "`n[6/7] Checking OpenSpec configuration..." -ForegroundColor Yellow
+# -- 7. Sanity checks -------------------------------------------------------------
+Write-Host "`n[7/9] Checking OpenSpec configuration..." -ForegroundColor Yellow
 $configPath = Join-Path $Root "openspec/config.yaml"
 if (-not (Select-String -Path $configPath -Pattern '^schema: spec-driven-decisions' -Quiet)) {
     Write-Error ("openspec/config.yaml no longer selects 'spec-driven-decisions'. " +
@@ -107,8 +123,26 @@ try {
     Pop-Location
 }
 
-# -- 7. Flutter doctor ------------------------------------------------------------
-Write-Host "`n[7/7] Checking Flutter environment..." -ForegroundColor Yellow
+# -- 8. Verify canonical skill outputs -------------------------------------------
+Write-Host "`n[8/9] Verifying canonical skill outputs..." -ForegroundColor Yellow
+Push-Location $Root
+try {
+    $ExpectedSkills = @(node scripts/project-skills.mjs expected)
+    if ($LASTEXITCODE -ne 0) { throw "expected skill inventory failed" }
+} finally {
+    Pop-Location
+}
+$MissingSkills = @(
+    $ExpectedSkills | Where-Object {
+        -not (Test-Path -LiteralPath (Join-Path $Root ".agents\skills\$_\SKILL.md"))
+    }
+)
+if ($MissingSkills.Count -gt 0) {
+    throw ("Missing canonical skill output for: " + ($MissingSkills -join ", "))
+}
+
+# -- 9. Flutter doctor ------------------------------------------------------------
+Write-Host "`n[9/9] Checking Flutter environment..." -ForegroundColor Yellow
 flutter doctor
 
 Write-Host "`nSetup complete." -ForegroundColor Green

@@ -1,8 +1,8 @@
 ## Context
 
-The repository already treats `AGENTS.md`, OpenSpec artifacts, and installed skills as durable agent context, but it has no path from an ordinary correction or repeated difficulty to a reviewed repository lesson. The tracked `validate` skill also lives under the nonstandard `skill/` directory and is absent from `skills-lock.json`; current setup restores only locked external skills and generated OpenSpec skills, so repository-owned skill source is not reliably materialised for agents. In `skills` 1.5.10, adding a local source resolves `.` to an absolute path before writing `skills-lock.json`, so raw local lock entries are not portable between checkouts.
+The repository already treats `AGENTS.md`, OpenSpec artifacts, and installed skills as durable agent context, but it has no path from an ordinary correction or repeated difficulty to a reviewed repository lesson. The tracked `validate` skill began in a nonstandard singular directory and is absent from `skills-lock.json`; current setup restores only locked external skills and generated OpenSpec skills, so repository-owned skill source is not reliably materialised for agents. In `skills` 1.5.10, adding a local source resolves `.` to an absolute path before writing `skills-lock.json`, so raw local lock entries are not portable between checkouts.
 
-The change spans policy, two reusable skills, learning-record storage, both platform setup scripts, and lockfile verification. Generated agent directories remain ignored outputs. The design must work for agents with different metadata exposure and must not let the learning mechanism silently grant itself authority.
+The change spans policy, two reusable skills, learning-record storage, a narrowly tracked Pi runtime identity extension, both platform setup scripts, and lockfile verification. Generated agent directories remain ignored outputs except for that explicit project-local Pi extension source. The design must work for agents with different metadata exposure and must not let the learning mechanism silently grant itself authority.
 
 ## Goals / Non-Goals
 
@@ -14,6 +14,7 @@ The change spans policy, two reusable skills, learning-record storage, both plat
 - Make repository-owned and external skills reproducibly available through the existing setup entry points.
 - Correct and register the existing `validate` skill as the first acceptance case.
 - Keep the detailed procedures out of globally loaded `AGENTS.md` and in focused, testable skills.
+- Give trusted project-local Pi sessions exact, current, allowlisted runtime provenance without exposing credentials.
 
 **Non-Goals:**
 
@@ -79,11 +80,19 @@ session_id: exact-session-id-or-unavailable
 ---
 ```
 
-For Pi, `model` is omitted. The body contains the observation, source evidence, five-whys attempt, root-cause confidence and unknowns, proposed generalisation, counterexamples, existing-guidance check, recommendation, human review outcome, and links to related occurrences or promoted guidance.
+Pi uses the same exact-model-or-`unavailable` rule. The tracked runtime identity extension supplies Pi's current host values when project-local resources are trusted. The body contains the observation, source evidence, five-whys attempt, root-cause confidence and unknowns, proposed generalisation, counterexamples, existing-guidance check, recommendation, human review outcome, and links to related occurrences or promoted guidance.
 
 A candidate does not alter agent behavior. Promotion into `AGENTS.md` or a skill is a separate reviewed change. The review-before-record rule launches as a provisional constraint; D8 defines the evidence for reconsidering it if interruptions outweigh its filtering value.
 
-### 3. Use two focused repository skills
+### 3. Expose Pi runtime identity through a narrow project extension
+
+Following D40-D41, track `.pi/extensions/runtime-context.ts` directly at Pi's conventional project-local discovery path. A narrow `.gitignore` exception exposes only this file; settings, sessions, packages, and all other `.pi/` state remain ignored. Pi's normal project-trust boundary controls automatic execution.
+
+The extension reads the current `ctx.model`, `ctx.sessionManager.getSessionId()`, `ctx.mode`, and `ctx.cwd` during every `before_agent_start`, adds a fresh UTC timestamp, JSON-encodes the allowlisted values, and appends them to that turn's system prompt. Per-turn calculation prevents stale provenance after model or session changes. It never reads API keys or exposes `modelRegistry` state. A missing provider or model becomes `unavailable` rather than an inferred identifier.
+
+Direct tracking is preferable to copying a duplicate from setup because Pi already owns a conventional, trusted project source path. It is also preferable to global installation because the behavior and provenance contract belong to this repository.
+
+### 4. Use two focused repository skills
 
 Following D14-D17, create:
 
@@ -106,15 +115,15 @@ skills/
 
 Both new skills are initialised with the locked `npx skills init` command and validated by the tracked local-skill validator plus CLI discovery. Forward tests use raw scenarios in Codex, Claude Code, and Pi sessions: corrections that should and should not trigger learning, inconclusive RCA, unavailable metadata or subagents, clean local-skill installation, repeat setup, and external lockfile registration. The existing `validate` skill is moved intact rather than regenerated.
 
-### 4. Make setup authoritatively reconcile and verify the declared skill set
+### 5. Make setup authoritatively reconcile and verify the declared skill set
 
-Following D10-D13, D18, and D21-D23, setup is the authoritative reconciliation and verification entry point. External registration may materialise a skill before setup, but no installation workflow reports success until this phase completes:
+Following D10-D13, D21-D23, and D31, setup is the authoritative reconciliation and verification entry point. External registration may materialise a skill before setup, but no installation workflow reports success until this phase completes:
 
 ```text
 npm tooling available
         |
         v
-npx skills install
+npx skills experimental_install
 restore skills-lock.json entries
         |
         v
@@ -139,7 +148,7 @@ Because the CLI writes an absolute local source, both setup paths call one cross
 
 `skills-lock.json` remains the reproducible manifest for external skills and records local skills after root-source installation with portable `source: "."` entries. A repeat setup with unchanged tracked sources is expected to leave tracked files unchanged. Generated `.agents/`, `.codex/`, and tool-specific directories remain ignored.
 
-### 5. Verify behavior at both structural and workflow levels
+### 6. Verify behavior at both structural and workflow levels
 
 Structural verification covers:
 
@@ -149,6 +158,7 @@ Structural verification covers:
 - Portable `source: "."` values and expected `skillPath` values for every local lock entry, with no absolute checkout path committed.
 - Presence of every lockfile and tracked local skill at `.agents/skills/<name>/SKILL.md` after setup.
 - A clean `skills-lock.json` diff after a repeated setup with no source changes.
+- A narrowly tracked `.pi/extensions/runtime-context.ts` file while all other `.pi/` state remains ignored.
 
 Workflow verification covers:
 
@@ -156,6 +166,7 @@ Workflow verification covers:
 - A newly added local skill is installed without editing either setup script.
 - External skills remain restorable from the lockfile.
 - The learning skill does not write before review, does not promote inconclusive analysis, and stops its learning branch when no independent subagent is available.
+- A trusted Pi turn reports exact allowlisted identity matching authoritative host event metadata; the same check without the extension demonstrates why prompt injection is required.
 
 ## Risks / Trade-offs
 
@@ -170,16 +181,23 @@ Workflow verification covers:
 - **[External skill instructions introduce unsafe authority]** → Keep external registration deliberate, review the source and lockfile diff, and rely on setup only after the source is tracked.
 - **[Skill instructions overfit the examples used to build them]** → Forward-test with raw positive, negative, and ambiguous scenarios without leaking the expected answer.
 
+Additional Pi-specific risks are controlled as follows:
+
+- **[Pi identity becomes stale after model or session changes]** Read current host state in `before_agent_start` on every turn instead of caching startup values.
+- **[Runtime metadata leaks secrets or becomes prompt injection]** JSON-encode a fixed allowlist and never read API keys or expose model-registry state.
+- **[Project-local extension executes without user trust]** Rely on Pi's existing project-trust boundary and require explicit trust in automatic-discovery tests.
+
 ## Migration Plan
 
-1. Move `skill/validate` to `skills/validate`, preserving `SKILL.md` and eval assets.
+1. Relocate `validate` into `skills/validate`, preserving `SKILL.md` and eval assets.
 2. Initialise `learn-from-interaction` and `install-project-skill` under `skills/` with `npx skills init`; author them, add the learning-record asset, and validate all tracked skills with repository-available tooling.
-3. Add the concise learning trigger and project-skill conventions to `AGENTS.md`.
-4. Add the local-lock validator/normalizer and update both setup scripts to use `npx skills install`, enumerate repository-owned skill names, install each from the repository root, normalize local lock sources, and verify canonical output for every declared skill.
-5. Run setup to register repository-owned skills and refresh `skills-lock.json`; review the resulting lockfile changes.
-6. Run structural checks, repeated-setup idempotence checks, clean-install checks, Git Bash checks, and independent Codex/Claude Code/Pi forward tests.
+3. Track the Pi runtime identity extension through a narrow `.gitignore` exception and align exact-model provenance across guidance, the learning skill, and its record template.
+4. Add the concise learning trigger and project-skill conventions to `AGENTS.md`.
+5. Add the local-lock validator/normalizer and update both setup scripts to use `npx skills experimental_install`, enumerate repository-owned skill names, install each from the repository root, normalize local lock sources, and verify canonical output for every declared skill.
+6. Run setup to register repository-owned skills and refresh `skills-lock.json`; review the resulting lockfile changes.
+7. Run structural checks, Pi identity checks, repeated-setup idempotence checks, clean-install checks, Git Bash checks, and independent Codex/Claude Code/Pi forward tests.
 
-Rollback consists of reverting the tracked source move, skills, guidance, setup changes, and lockfile entries. Ignored generated agent directories can then be regenerated by the prior setup workflow; no Flutter application data is migrated.
+Rollback consists of reverting the tracked source move, Pi extension and ignore exception, skills, guidance, setup changes, and lockfile entries. Ignored generated agent directories can then be regenerated by the prior setup workflow; no Flutter application data is migrated.
 
 ## Open Questions
 

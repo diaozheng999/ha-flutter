@@ -6,10 +6,11 @@ Repository knowledge currently improves only when someone deliberately edits age
 
 - Add a review-gated learning workflow that detects durable lessons during ordinary work without allowing agents to silently amend repository guidance.
 - Add a `learn-from-interaction` skill that delegates critical analysis to an independent subagent, requires an evidence-backed five-whys root-cause attempt, attempts to generalise the lesson, and tests the generalisation before proposing a repository learning.
-- Store reviewed learning candidates as individual `agent-learnings/{date}-{time}-{slug}.md` files containing the observation, evidence, analysis, disposition, coding agent, session ID, and model metadata when available; Pi intentionally omits model metadata.
+- Store reviewed learning candidates as individual `agent-learnings/{date}-{time}-{slug}.md` files containing the observation, evidence, analysis, disposition, coding agent, session ID, and exact model metadata when available, using `unavailable` rather than inference when a value is not exposed.
+- Track a project-local Pi runtime identity extension that makes an allowlisted set of host metadata, including the exact current model and session ID, available to Pi on every turn without exposing credentials.
 - Require human review before creating a candidate learning file or promoting a learning into `AGENTS.md` or a skill. Treat candidate-file review as a provisional policy to revisit if it proves too interruptive.
 - Keep `AGENTS.md` limited to the learning triggers, mandatory safety boundary, and bootstrap fallback while placing the detailed workflow in the reusable skill.
-- Standardise tracked repository-owned skills under `skills/`, including correcting the existing `skill/validate` location.
+- Standardise tracked repository-owned skills under `skills/`, including relocating the existing `validate` source into the conventional layout.
 - Add a project skill-installation workflow that uses `npx skills` and treats the platform setup scripts as the authoritative reconciliation and verification entry point.
 - Make both setup scripts discover and install all repository-owned skills from the repository root, restore locked external skills, and verify that expected skills are available without adding per-skill setup commands.
 - Register and restore the existing `validate` skill through the same lockfile-driven setup path.
@@ -27,8 +28,8 @@ None.
 
 ## Impact
 
-- Agent policy and handoff guidance in `AGENTS.md`.
+- Agent policy and handoff guidance in `AGENTS.md`, plus a narrowly tracked Pi extension at `.pi/extensions/runtime-context.ts`.
 - New tracked learning records under `agent-learnings/` and repository-owned skills under `skills/`.
 - Existing `validate` skill source path and its evaluation assets.
 - Windows and Linux/macOS setup scripts, `skills-lock.json`, and the `npx skills` installation lifecycle.
-- Generated agent skill directories remain ignored and reproducible from tracked sources and setup.
+- Generated agent skill directories remain ignored and reproducible from tracked sources and setup; other `.pi/` state remains ignored around the single tracked runtime identity extension.

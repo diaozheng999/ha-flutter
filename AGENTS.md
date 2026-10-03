@@ -13,7 +13,7 @@ type: concise description (<tool>, <model>)
 
 **Types:** `feat` | `fix` | `refactor` | `docs` | `test` | `chore` | `build` | `ci`
 
-Keep the description short and imperative (for example, `add login screen`, not `added login screen`). The trailer identifies the tool and exact model variant that produced the commit. Use the clearest surfaced model identifier rather than a family name: for example, `(codex, gpt-5.6-terra)`, not `(codex, gpt-5)`. For `pi`, use `(pi)` because its model is not exposed.
+Keep the description short and imperative (for example, `add login screen`, not `added login screen`). The trailer identifies the tool and exact model variant that produced the commit. Use the clearest surfaced model identifier rather than a family name: for example, `(codex, gpt-5.6-terra)`, not `(codex, gpt-5)`. For Pi, use the exact model from its trusted runtime identity when available, for example `(pi, nvidia/nemotron-3-ultra-550b-a55b)`; use `(pi)` only when the model is unavailable.
 
 ## Decision Log & Handoff
 
@@ -53,20 +53,31 @@ scripts\setup.ps1
 bash scripts/setup.sh
 ```
 
-The setup script installs local dependencies, installs the OpenSpec CLI globally, restores the locked skill set, initialises OpenSpec with Claude Code by default, and bridges its commands to universal agent skills. Re-run it any time skills or OpenSpec commands seem missing. Pass `none` to skip OpenSpec initialisation, or a comma-separated list such as `cursor,opencode` to configure extra supported OpenSpec agents alongside Claude.
+The setup script installs local dependencies, installs the OpenSpec CLI globally, restores locked external skills, reconciles tracked repository-owned skills, verifies the complete canonical skill set, initialises OpenSpec with Claude Code by default, and bridges its commands to universal agent skills. Re-run it any time skills or OpenSpec commands seem missing. Pass `none` to skip OpenSpec initialisation, or a comma-separated list such as `cursor,opencode` to configure extra supported OpenSpec agents alongside Claude.
 
 ## Skill & Tool Management
 
 The OpenSpec CLI is installed globally because generated commands invoke `openspec` directly. The `skills` CLI and all other tooling are local npm devDependencies.
 
 - All agent tool packages are declared in `package.json` under `devDependencies`.
-- Installed artifacts and agent configs (for example `.agent/`, `.agents/`, `.claude/`, `.codex/`, `.cursor/`, `.opencode/`, `.pi/`, `.zcode/`, and `node_modules/`) are gitignored. Never commit them; the setup script regenerates them.
-- Skills are restored reproducibly from `skills-lock.json` with `npx skills experimental_install`.
-- To add a skill, run `npx skills add <source> --skill <name>`, then commit the updated `skills-lock.json`. Do not add per-skill installation commands to the setup scripts.
+- Repository-owned skill sources are tracked at `skills/<name>/SKILL.md`; the directory and frontmatter names must match. The repository-root source operation is `npx skills add . --skill <name>`.
+- Setup is the authoritative reconciliation and verification entry point. It restores `skills-lock.json` with the supported `npx skills experimental_install` command, discovers every tracked local skill generically, normalizes local lock sources, and verifies the complete canonical output set.
+- To add an external skill, review it, run `npx skills add <source> --skill <name>`, review the resulting `skills-lock.json` diff, and rerun setup. Do not add per-skill installation commands to setup.
+- Installed artifacts and agent configs (for example `.agent/`, `.agents/`, `.claude/`, `.codex/`, `.cursor/`, `.opencode/`, `.pi/`, `.zcode/`, and `node_modules/`) are gitignored generated outputs. The only `.pi/` exception is the reviewed project extension at `.pi/extensions/runtime-context.ts`; it is not a skill source. Never commit or treat generated outputs as repository-owned skill sources; setup regenerates them.
 - `openspec init` supports fewer agents than the `skills` CLI. The setup script uses Claude's generated `.claude/commands/opsx/` commands as the source for `scripts/generate-opsx-skills.mjs`, which moves them into `.agents/skills/opsx-*/SKILL.md`. This gives agents that use the universal skill directory the same workflow.
 - After setup, `/opsx-propose`, `/opsx-explore`, `/opsx-apply`, `/opsx-sync`, and `/opsx-archive` are available alongside standard project skills such as `/run`, `/verify`, and `/code-review`.
 
 **Bootstrap check:** if `/opsx-*` or other expected commands are unavailable, run the setup script for your OS and restart the agent runtime.
+
+## Agent Learning
+
+Invoke `learn-from-interaction` when an interaction exposes an explicit user correction, repeated friction, a newly discovered repository invariant, or a workflow repeated enough to be reusable. Do not trigger it for a one-off workaround, ordinary implementation detail, or unsupported preference by itself, and never write a learning immediately.
+
+Before drafting or recording a learning, delegate unanchored critical assessment to an independent subagent. Require human review before creating a candidate under `agent-learnings/` and a separate human review before promoting it into `AGENTS.md` or a skill. Review before candidate creation is provisional, but agents must not relax it without a reviewed repository change; reconsider its timing if prompts become frequent, candidates are routinely rejected, or ordinary work is noticeably disrupted.
+
+If `learn-from-interaction` is unavailable, report the missing skill and run the platform setup script when authorised. Do not improvise the workflow or create an ad hoc learning record.
+
+Trusted project-local Pi sessions load `.pi/extensions/runtime-context.ts`, which supplies an allowlisted per-turn runtime identity containing the coding agent, provider, exact model or `unavailable`, session ID, mode, working directory, and UTC observation time. Treat these host-supplied values as provenance; never infer replacements or expose credentials.
 
 To add a new agent tool:
 

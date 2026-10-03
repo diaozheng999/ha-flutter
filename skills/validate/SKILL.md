@@ -1,6 +1,6 @@
 ---
 name: validate
-description: Validate that a change is ready to implement — coherent scope, tasks sized and self-contained enough for a mid-level implementer, and conformance to sourced (never assumed) best practices — reporting findings as a table with rubric-grounded severities. Use whenever the user asks to "validate this change", "/validate", "is this change consistent", "is this ready to implement", or wants confidence in a change before building or archiving it. Read-only: reports problems, never edits artifacts.
+description: 'Validate that a change is ready to implement — coherent scope, tasks sized and self-contained enough for a mid-level implementer, and conformance to sourced (never assumed) best practices — reporting findings as a table with rubric-grounded severities. Use whenever the user asks to "validate this change", "/validate", "is this change consistent", "is this ready to implement", or wants confidence in a change before building or archiving it. Read-only: reports problems, never edits artifacts.'
 ---
 
 # Change Validation
@@ -36,7 +36,7 @@ Calibrate against a competent **mid-level implementer**, defined by capability, 
 
 Identify the domain(s) the change touches (UI/design system, Flutter/Dart, API design, infra, skill authoring, …). For each domain, find an authoritative source **in this order**:
 
-1. **Project-local sources — discover, don't assume a fixed list.** The repo accumulates its own authority as it matures; sweep for it every run rather than relying on what existed last time. Look at least in: `CLAUDE.md`/`AGENTS.md`; `openspec/config.yaml`; the main specs under `openspec/specs/` (established requirements are settled conventions); decision logs of the current *and archived* changes under `openspec/changes/` (prior decisions bind later changes unless explicitly superseded); project skills (`skill/`, plus installed ones like `flutter-*`, `home-assistant-best-practices`, `frontend-design`); lint/analysis configs; and any `docs/`, ADRs, or style guides that have appeared. Also treat consistently-established code patterns (e.g. an existing shared widget or token system the change should extend rather than bypass) as a local source — cite the file that establishes the pattern.
+1. **Project-local sources — discover, don't assume a fixed list.** The repo accumulates its own authority as it matures; sweep for it every run rather than relying on what existed last time. Look at least in: `CLAUDE.md`/`AGENTS.md`; `openspec/config.yaml`; the main specs under `openspec/specs/` (established requirements are settled conventions); decision logs of the current *and archived* changes under `openspec/changes/` (prior decisions bind later changes unless explicitly superseded); project skills (`skills/`, plus installed ones like `flutter-*`, `home-assistant-best-practices`, `frontend-design`); lint/analysis configs; and any `docs/`, ADRs, or style guides that have appeared. Also treat consistently-established code patterns (e.g. an existing shared widget or token system the change should extend rather than bypass) as a local source — cite the file that establishes the pattern.
 2. Official documentation of the technology (e.g. Effective Dart, Material 3 guidelines).
 3. A source the user has previously endorsed in this repo — check the registry below.
 
