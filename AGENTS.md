@@ -41,6 +41,9 @@ The schema enforces this in three places: its dependency graph blocks specs and 
 - In RF timing discussions, interpret duration questions against the on-air behavior being discussed before assuming development effort. Calculate added airtime and command-start delay explicitly, separate them from OLED/network latency, and label calculation versus physical measurement.
 - Quantify latency overhead before selecting a wire format. Do not duplicate room/button information already carried by the appliance frame without a demonstrated need. For LilyGo, D63 selects only the physically received footer and retires header recovery. B1 C0 waveform bytes start at offset 8; preserve transport metadata and every native frame/repeat boundary. Fit the footer inside the existing final pause with zero added command-start or total duration, and verify attribution on the OLED.
 
+- For Home Assistant automation tests, verify native script control-flow semantics as well as template values. A failing condition inside an `if` or `choose` sub-sequence must not be assumed to abort the parent automation. Put safety/precondition guards at the intended execution boundary, snapshot mutable state before dependent calculations, and cover off-state/queued races against the production action tree. Do not substitute slower user button pacing for fixing queued latency or service errors.
+- Keep direct event-to-light mappings as one automation calling the target group's native services. Do not add member-confirmation waits, workers, persistent state owners or integration changes without a demonstrated need within the user's requested scope. Distinguish delays introduced by the automation from timeouts in the existing bulb integration.
+
 ## Development Setup
 
 After cloning, run the appropriate setup script:
