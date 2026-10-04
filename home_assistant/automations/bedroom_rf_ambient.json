@@ -1,0 +1,120 @@
+{
+  "alias": "Bedroom RF Remote Ambient Control",
+  "description": "Apply fresh unmarked bedroom remote light presses to the ambient group only. Keep Mistral helper correction independent; never retransmit RF. Manual choices use the ambient profile's existing reset policy.",
+  "mode": "queued",
+  "max": 50,
+  "trace": { "stored_traces": 10 },
+  "triggers": [
+    {
+      "trigger": "state",
+      "entity_id": "event.study_lilygo_lora32_t3_v1_6_1_bedroom_rf_command",
+      "to": null
+    }
+  ],
+  "conditions": [
+    {
+      "alias": "Reject other traffic before queue admission",
+      "condition": "template",
+      "value_template": "{{ trigger is defined and trigger.entity_id == 'event.study_lilygo_lora32_t3_v1_6_1_bedroom_rf_command' and trigger.to_state is not none and trigger.from_state is not none and as_timestamp(trigger.to_state.state, 0) > as_timestamp(trigger.from_state.last_changed, 0) and trigger.to_state.attributes.get('event_type', '') in ['light_off_unmarked', 'light_warm_unmarked', 'light_neutral_unmarked', 'light_cool_unmarked', 'light_brightness_up_unmarked', 'light_brightness_down_unmarked'] }}"
+    }
+  ],
+  "actions": [
+    {
+      "alias": "Accept only a fresh triggering occurrence",
+      "condition": "template",
+      "value_template": "{{ trigger is defined and trigger.entity_id == 'event.study_lilygo_lora32_t3_v1_6_1_bedroom_rf_command' and trigger.to_state is not none and trigger.from_state is not none and as_timestamp(trigger.to_state.state, 0) > as_timestamp(trigger.from_state.last_changed, 0) }}"
+    },
+    {
+      "variables": {
+        "event_type": "{{ trigger.to_state.attributes.get('event_type', '') }}",
+        "ambient_members": [
+          "light.yeelink_sg_457031179_colorc_s_2",
+          "light.yeelink_sg_457037035_colorc_s_2"
+        ]
+      }
+    },
+    {
+      "alias": "Allow only the six physical light observations",
+      "condition": "template",
+      "value_template": "{{ event_type in ['light_off_unmarked', 'light_warm_unmarked', 'light_neutral_unmarked', 'light_cool_unmarked', 'light_brightness_up_unmarked', 'light_brightness_down_unmarked'] }}"
+    },
+    {
+      "alias": "Skip unavailable reception",
+      "condition": "template",
+      "value_template": "{{ states('event.study_lilygo_lora32_t3_v1_6_1_bedroom_rf_command') not in ['unknown', 'unavailable'] }}"
+    },
+    {
+      "alias": "Require an available ambient group",
+      "condition": "state",
+      "entity_id": "light.bedroom_ambient",
+      "state": ["on", "off"]
+    },
+    {
+      "choose": [
+        {
+          "conditions": "{{ event_type == 'light_off_unmarked' }}",
+          "sequence": [
+            {
+              "action": "light.turn_off",
+              "target": { "entity_id": "light.bedroom_ambient" },
+              "data": { "transition": 0 }
+            },
+            { "stop": "Ambient OFF handled without manual takeover." }
+          ]
+        }
+      ]
+    },
+    {
+      "variables": {
+        "brightness_command": "{{ event_type in ['light_brightness_up_unmarked', 'light_brightness_down_unmarked'] }}",
+        "ambient_snapshot": "{{ {'state': states('light.bedroom_ambient'), 'brightness': state_attr('light.bedroom_ambient', 'brightness')} }}"
+      }
+    },
+    {
+      "alias": "Stop ineligible brightness at the parent sequence boundary",
+      "condition": "template",
+      "value_template": "{{ not brightness_command or (ambient_snapshot.state == 'on' and is_number(ambient_snapshot.brightness)) }}"
+    },
+    {
+      "variables": {
+        "target_kelvin": "{{ {'light_warm_unmarked': 2700, 'light_neutral_unmarked': 4000, 'light_cool_unmarked': 6500}.get(event_type, 0) }}",
+        "target_pct": "{% if brightness_command %}{% set current = (ambient_snapshot.brightness | float(0) * 100 / 255) | round(0) | int %}{{ [[current + (10 if event_type == 'light_brightness_up_unmarked' else -10), 1] | max, 100] | min }}{% else %}0{% endif %}"
+      }
+    },
+    {
+      "alias": "Pause only the tracked ambient bulbs",
+      "if": { "condition": "state", "entity_id": "switch.bedroom_ambient_adaptive_lighting_bedroom_ambient", "state": "on" },
+      "then": [
+        {
+          "action": "adaptive_lighting.set_manual_control",
+          "data": {
+            "entity_id": "switch.bedroom_ambient_adaptive_lighting_bedroom_ambient",
+            "lights": "{{ ambient_members }}",
+            "manual_control": true
+          }
+        }
+      ]
+    },
+    {
+      "choose": [
+        {
+          "conditions": "{{ brightness_command }}",
+          "sequence": [
+            {
+              "action": "light.turn_on",
+              "target": { "entity_id": "light.bedroom_ambient" },
+              "data": { "brightness_pct": "{{ target_pct }}", "transition": 0 }
+            }
+          ]
+        }
+      ],
+      "default": [
+        {
+          "action": "light.turn_on",
+          "target": { "entity_id": "light.bedroom_ambient" },
+          "data": { "color_temp_kelvin": "{{ target_kelvin }}", "transition": 0 }
+        }
+      ]
+    }
+  ]
+}
